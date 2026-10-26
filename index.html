@@ -88,10 +88,11 @@ const safe=k=>`<div class="safe ${({STOP:'stop',DOC:'doc',FOOD:'food',PAIN:'pain
 /* ===== Storage & event log (UTC ISO timestamps + device time zone) ===== */
 const KP='fcai_proto_state_v1',KL='fcai_proto_log_v1';
 const TZ=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'unknown'}catch(e){return 'unknown'}})();
-const nowISO=()=>new Date().toISOString();
+const CLK='fcai_proto_clock_v1';function simOffset(){const c=lsGet(CLK);return c&&c.days||0}
+const appNow=()=>Date.now()+simOffset()*864e5;const nowISO=()=>new Date(appNow()).toISOString();
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-function logEv(type,data){const L=lsGet(KL)||[];L.push({type,atUTC:nowISO(),timeZoneID:TZ,utcOffsetMin:-new Date().getTimezoneOffset(),data:data==null?null:data});lsSet(KL,L)}
+function logEv(type,data){const L=lsGet(KL)||[];L.push({type,atUTC:nowISO(),timeZoneID:TZ,utcOffsetMin:-new Date().getTimezoneOffset(),data:data==null?null:data,...(simOffset()?{simulatedDayOffset:simOffset()}:{})});lsSet(KL,L)}
 function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p:{
  disclaimerAccepted:false,disclaimerAcceptedAt:null,disclaimerVersion:'safe-ref-1.0',onboardingStartedAt:null,
  appLocale:navigator.language||'en',timeZoneID:TZ,privacyNoticeShownAt:null,privacyNoticeVersion:'privacy-1.0',
@@ -166,10 +167,10 @@ function computeReadiness(){const p=P(),R={};PATTERNS.forEach(x=>R[x]={level:'no
 function stepCount(){const o=['s3','s4','s5','s6','s7','s8','s9','s10','s11'];const i=o.indexOf(S.screen==='s7a'?'s7':S.screen);return i<0?null:i+1}
 
 /* ===== Navigation ===== */
-function go(scr,push){if(push!==false&&S.screen!==scr)S.hist.push(S.screen);S.screen=scr;logEv('screen_view',{screen:scr});save();render();document.getElementById('app').scrollTop=0;window.scrollTo(0,0)}
+function go(scr,push){if(push!==false&&S.screen!==scr)S.hist.push(S.screen);S.screen=scr;logEv('screen_view',{screen:scr});save();render();{const a=document.getElementById('app');a.classList.remove('enter');void a.offsetWidth;a.classList.add('enter')}document.getElementById('app').scrollTop=0;window.scrollTo(0,0)}
 function back(){if(B)return;const prev=S.hist.pop();if(prev){if(S.screen==='stop')S.stopReason=null;S.screen=prev;computeSafety();save();render()}}
 function hardStop(reason){S.stopReason=reason;P().safetyMode='paused';logEv('hard_stop',{reason});go('stop')}
-function weeksSince(month){if(!month)return null;const [y,m]=month.split('-').map(Number);if(!y||!m)return null;return (Date.now()-new Date(y,m-1,15))/6048e5}
+function weeksSince(month){if(!month)return null;const [y,m]=month.split('-').map(Number);if(!y||!m)return null;return (appNow()-new Date(y,m-1,15))/6048e5}
 function next(){const p=P(),s=S.screen;let t=null;
  switch(s){
  case 's1':if(!p.disclaimerAccepted)return;p.disclaimerAcceptedAt=p.disclaimerAcceptedAt||nowISO();p.onboardingStartedAt=p.onboardingStartedAt||nowISO();logEv('disclaimer_accepted',{version:p.disclaimerVersion});t='s2';break;
@@ -570,10 +571,10 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  const st=stepCount(),canBack=S.hist.length&&!['baseline','results'].includes(S.screen);
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="9" aria-valuenow="${st}"><i style="width:${st/9*100}%"></i></div><span class="steptxt">Step ${st} of 9</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
-if(S.screen==='baseline')S.screen='s14'; // timing state isn't resumable; restart the check-in
-logEv(lsGet(KL)?'app_open':'app_first_open',{resumeAt:S.screen,locale:navigator.language});
-render();
 </script>
+<script src="js/config.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/app.js"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
