@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b0d12">
 <title>FitcoachAI — Draft prototype (reference only)</title>
+<link rel="icon" href="data:,">
 <style>
 :root{--bg:#0b0d12;--card:#151924;--card2:#1d2230;--line:#2a3142;--tx:#e9edf5;--mut:#9aa4b8;--acc:#5ee6a8;--warn:#ffcf5a;--bad:#ff6b6b;--r:16px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -54,6 +55,10 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;bord
 select,input[type=month],input[type=time]{background:var(--card2);color:var(--tx);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:16px;min-height:44px}
 input[type=range]{width:100%;accent-color:var(--acc)}
 @media (prefers-reduced-motion:no-preference){.prog i{transition:width .3s}}
+.fx3d{width:100%;height:220px;border-radius:16px;background:radial-gradient(circle at 50% 40%,#1e2a3a,#0b0f14);position:relative;overflow:hidden;margin:8px 0 14px;touch-action:none}
+.fx3d canvas{display:block;width:100%!important;height:100%!important}.fx3d .fxmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:#9aa4b2;font-size:13px}
+.fx3d .fxhint{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:11px;color:#9aa4b2;pointer-events:none}
+.mmap{display:flex;gap:8px;justify-content:center;margin:8px 0}.mmap>div{width:40%;max-width:125px}.mmap .mmcap{font-size:11px;color:#9aa4b2;text-align:center}.mmfb{font-size:13px;color:#9aa4b2}
 </style>
 </head>
 <body>
@@ -65,6 +70,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="sheet" role="dialog" aria-modal="true"><div class="in" id="sheetIn"></div></div>
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
 <script>
@@ -202,6 +208,7 @@ function editFrom(scr){S.returnTo='s13';go(scr)}
 /* ===== Screens ===== */
 const SC={};
 SC.s1=()=>`<h1>Hi, I'm your FitcoachAI coach.</h1>
+<div class="fx3d" data-fx="3d" aria-label="3D coach mannequin — drag to rotate"></div>
 <p>I'll help you build a routine that fits your body, your schedule, and your life — starting with no equipment.</p>
 <p>First, a few quick questions (about 3 minutes). Then we'll do a short, gentle check-in workout so I can see where you're starting. Over the next week, I'll keep learning what works for you.</p>
 <p><b>One important thing:</b></p>${safe('REF')}
@@ -236,6 +243,7 @@ function mapTap(r){if(P().bodyAreas.some(a=>a.region===r)){P().bodyAreas=P().bod
 SC.s6=()=>{const p=P();return `<h1>Anything we should be careful with?</h1><p class="mut"><i>Tap any area that's sore, injured, or needs extra care. Tap again to remove it.</i></p>
 <div class="row"><button class="chip ${mapSide==='front'?'on':''}" onclick="mapSide='front';render()">Front</button><button class="chip ${mapSide==='back'?'on':''}" onclick="mapSide='back';render()">Back</button></div>
 <div class="bm">${svgBody(mapSide)}</div>
+${p.bodyAreas.length?`<p class="sm mut" style="margin-bottom:0">Muscles near the areas you marked:</p><div class="mmap" data-groups="${areaGroups()}" data-color="#ef4444"></div>`:''}
 <div>${p.bodyAreas.map(a=>`<span class="tag">${REGIONS[a.region]} · ${({current:'hurts now',oldCareful:'careful',surgery:'surgery'})[a.status]} <a onclick="openRegion('${a.region}')" style="cursor:pointer" aria-label="Edit ${REGIONS[a.region]}">✎</a></span>`).join('')}</div>
 <details class="card"><summary>Choose from a list (also jaw, ribs, tailbone, other…)</summary><div class="chips">${Object.keys(REGIONS).map(r=>`<button class="chip ${p.bodyAreas.some(a=>a.region===r)?'on':''}" onclick="openRegion('${r}')">${REGIONS[r]}</button>`).join('')}</div></details>
 <button class="btn sec" id="nothing" onclick="P().bodyNone=true;P().bodyAreas=[];save();next()">Nothing right now</button>
@@ -534,7 +542,7 @@ SC.baseline=()=>{if(!B)return `<p>Check-in isn't running.</p><button class="btn"
  const mic=`<span class="mic ${voiceOK&&recWanted?'on':''}">${voiceOK&&SR?(recWanted?'🎙 Listening':'🎙 Voice ready'):'🎙 Voice off — use buttons'}</span> <span class="sm mut" id="heard"></span>`;
  const stopB=`<button class="btn red" id="stopBtn" onclick="stopBaseline('button')">Stop</button>`,head=`<p class="mut sm">Test ${B.i+1} of ${B.tests.length} · ${PSHORT[t.pattern]}</p>`;
  switch(B.phase){
- case 'intro':return `${head}<h1>${esc(t.name)}</h1><div class="card">${esc(t.how)}</div><p class="sm mut">Up to ${t.cap} seconds.</p>${mic}
+ case 'intro':return `${head}<h1>${esc(t.name)}</h1><div class="card">${esc(t.how)}</div><p class="sm mut" style="margin-bottom:0">Muscles this works:</p><div class="mmap" data-groups="${PMUS[t.pattern]}"></div><p class="sm mut">Up to ${t.cap} seconds.</p>${mic}
   <button class="donebtn" id="startBtn" onclick="goTest('button')">Start</button><div class="row"><button class="btn sec" id="skipBtn" onclick="skipTest()">Skip this one</button>${stopB}</div>`;
  case 'run':return `${head}<h1>${esc(t.name)}</h1><div class="big" id="tm">${fmt(t.cap-B.elapsed)}</div>${B.paused?'<p style="text-align:center"><b>Paused</b></p>':''}<p style="text-align:center">${mic}</p>
   <button class="donebtn" id="doneBtn" onclick="finishTest('button')">Done</button><div class="row"><button class="btn sec" id="pauseBtn" onclick="pauseTest(${!B.paused})">${B.paused?'Resume':'Pause'}</button>${stopB}</div><p class="sm mut">Say "done", "pause", or "stop". Stop right away if anything hurts.</p>`;
@@ -554,13 +562,47 @@ SC.baseline=()=>{if(!B)return `<p>Check-in isn't running.</p><button class="btn"
  }return ''};
 
 /* ===== Render & boot ===== */
-function render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementById('app');el.innerHTML=SC[S.screen]();
+const PMUS={squat:'quads,glutes',push:'chest,triceps,shoulders',hinge:'glutes,hamstrings,lower_back',core:'abs,obliques',balance:'calves,glutes,quads',cardio:'quads,calves,hamstrings'};
+const RMUS={neck:'upper_back',upperBack:'upper_back,lats',lowerBack:'lower_back',shoulderL:'shoulders',shoulderR:'shoulders',elbowL:'biceps,triceps',elbowR:'biceps,triceps',wristL:'forearms',wristR:'forearms',chest:'chest',abdomen:'abs,obliques',pelvic:'abs',hipL:'glutes',hipR:'glutes',kneeL:'quads,hamstrings',kneeR:'quads,hamstrings',ankleL:'calves',ankleR:'calves'};
+function areaGroups(){return [...new Set(P().bodyAreas.flatMap(a=>(RMUS[a.region]||'').split(',').filter(Boolean)))].join(',')}
+function render(){_render();try{window.dispatchEvent(new Event('fc-render'))}catch(e){}}
+function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementById('app');el.innerHTML=SC[S.screen]();
  const st=stepCount(),canBack=S.hist.length&&!['baseline','results'].includes(S.screen);
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="9" aria-valuenow="${st}"><i style="width:${st/9*100}%"></i></div><span class="steptxt">Step ${st} of 9</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 if(S.screen==='baseline')S.screen='s14'; // timing state isn't resumable; restart the check-in
 logEv(lsGet(KL)?'app_open':'app_first_open',{resumeAt:S.screen,locale:navigator.language});
 render();
+</script>
+<script type="module">
+// Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
+let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
+function hasWebGL(){try{const c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
+async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(el,'3D preview isn\'t available on this device. Everything else works normally.');
+ el.innerHTML='<div class="fxmsg">Loading 3D coach…</div>';
+ try{const THREE=await import('three');const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const {OrbitControls}=await import('three/addons/controls/OrbitControls.js');
+  if(!el.isConnected)return;const w=el.clientWidth||340,h=el.clientHeight||220;
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(w,h);r.setClearColor(0x000000,0);r.outputColorSpace=THREE.SRGBColorSpace;
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,w/h,0.1,50);cam.position.set(0,1.2,3.6);
+  sc.add(new THREE.HemisphereLight(0xdde8ff,0x223344,2.2));const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(2,4,3);sc.add(d);
+  const gltf=await new GLTFLoader().loadAsync('assets/Xbot.glb');if(!el.isConnected){r.dispose();return}
+  const m=gltf.scene;sc.add(m);const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip)mix.clipAction(clip).play();
+  const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,0.95,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.2;oc.enableDamping=true;oc.update();
+  el.innerHTML='';el.appendChild(r.domElement);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
+  const clock=new THREE.Clock();let raf;const loop=()=>{if(!el.isConnected){cancelAnimationFrame(raf);r.dispose();return}raf=requestAnimationFrame(loop);mix.update(clock.getDelta());oc.update();r.render(sc,cam)};loop();
+  el.dataset.ready='1';
+ }catch(e){console.warn('3D preview unavailable:',e&&e.message);if(el.isConnected)fallback3d(el,'3D preview couldn\'t load. Everything else works normally.');el.dataset.failed='1'}}
+let MM=null;
+async function mountMap(el){el.dataset.done='1';const groups=(el.dataset.groups||'').split(',').filter(Boolean);
+ try{MM=MM||await import('./vendor/rich-body-highlighter/index.js');if(!el.isConnected)return;el.innerHTML='';
+  let gender='male';try{gender=JSON.parse(localStorage.fcai_proto_state_v1).p.sexForReference==='female'?'female':'male'}catch(e){}
+  const hl=groups.map(g=>({group:g,intensity:75,color:el.dataset.color||'#f97316'}));
+  for(const view of ['front','back']){const box=document.createElement('div');const host=document.createElement('div');box.appendChild(host);const c=document.createElement('div');c.className='mmcap';c.textContent=view==='front'?'Front':'Back';box.appendChild(c);el.appendChild(box);
+   new MM.MuscleMap(host,{gender,view,theme:'dark',width:'100%',highlights:hl,hoverHighlight:false})}
+  el.dataset.ready='1';
+ }catch(e){console.warn('Muscle map unavailable:',e&&e.message);if(el.isConnected)el.innerHTML='<div class="mmfb">Works: '+groups.map(g=>g.replace('_',' ')).join(', ')+'</div>';el.dataset.failed='1'}}
+function scan(){document.querySelectorAll('[data-fx="3d"]:not([data-done])').forEach(mount3d);document.querySelectorAll('.mmap:not([data-done])').forEach(mountMap)}
+window.addEventListener('fc-render',scan);scan();
 </script>
 </body>
 </html>
