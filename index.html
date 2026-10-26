@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>FitcoachAI — Draft prototype (reference only)</title>
+<style>
+:root{--bg:#0b0d12;--card:#151924;--card2:#1d2230;--line:#2a3142;--tx:#e9edf5;--mut:#9aa4b8;--acc:#5ee6a8;--warn:#ffcf5a;--bad:#ff6b6b;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#05060a;color:var(--tx);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",Segoe UI,Roboto,sans-serif}
+#phone{max-width:430px;min-height:100vh;margin:0 auto;background:var(--bg);position:relative;display:flex;flex-direction:column}
+@media(min-width:500px){#phone{margin:20px auto;border-radius:40px;border:10px solid #1a1d25;overflow:hidden;height:900px;min-height:0}}
+#draft{background:#3a2b00;color:var(--warn);font-size:12px;padding:6px 10px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#draft button{background:none;border:1px solid var(--warn);color:var(--warn);border-radius:8px;font-size:12px;padding:4px 8px;min-height:28px}
+#top{display:flex;align-items:center;gap:10px;padding:10px 16px 0;min-height:44px}
+#top .back{background:none;border:none;color:var(--acc);font-size:16px;min-height:44px;min-width:44px;text-align:left;padding:0}
+.prog{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}.prog i{display:block;height:100%;background:var(--acc)}
+.steptxt{font-size:12px;color:var(--mut);white-space:nowrap}
+#app{flex:1;overflow-y:auto;padding:12px 18px 120px}
+h1{font-size:26px;line-height:1.2;margin:10px 0 12px}h2{font-size:19px;margin:20px 0 8px}h3{font-size:16px;margin:16px 0 6px}
+p{margin:8px 0}.mut{color:var(--mut)}.sm{font-size:13px}
+.safe{background:var(--card);border-left:4px solid var(--warn);border-radius:10px;padding:12px;margin:12px 0;font-weight:600;font-size:14px}
+.safe.stop{border-color:var(--bad)}.safe.doc{border-color:#ffa94d}.safe.food{border-color:#6cb8ff}.safe.pain{border-color:#ff8fab}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.chip{background:var(--card2);color:var(--tx);border:1.5px solid var(--line);border-radius:22px;padding:10px 14px;min-height:44px;font-size:15px;cursor:pointer}
+.chip.on{border-color:var(--acc);background:#11382a;color:#fff}.chip.on::before{content:"✓ ";color:var(--acc)}
+.list .chip{display:block;width:100%;text-align:left;border-radius:12px;margin:6px 0}
+.btn{display:block;width:100%;background:var(--acc);color:#04210f;border:none;border-radius:14px;padding:15px;font-size:17px;font-weight:700;min-height:52px;margin:10px 0;cursor:pointer}
+.btn:disabled{opacity:.35}.btn.sec{background:var(--card2);color:var(--tx);border:1.5px solid var(--line)}.btn.red{background:var(--bad);color:#fff}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin:10px 0}
+label.chk{display:flex;gap:12px;align-items:flex-start;background:var(--card);padding:14px;border-radius:12px;font-weight:600;cursor:pointer}
+label.chk input{width:24px;height:24px;flex:none;accent-color:var(--acc)}
+.hq{background:var(--card);border-radius:12px;padding:12px;margin:10px 0}.hq .seg{display:flex;gap:6px;margin-top:8px}.hq .seg .chip{flex:1;text-align:center;padding:10px 4px}
+.fu{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.bm{display:flex;justify-content:center}.bm svg{width:230px;height:auto}
+.bm .rg{fill:#2b3347;stroke:#56607a;stroke-width:1;cursor:pointer}.bm .rg.on{fill:#ff8fab;stroke:#fff}
+.bm .body{fill:#171c28;stroke:#3a4256}
+.tag{display:inline-block;background:#3d1f2a;color:#ffc2d1;border-radius:10px;padding:4px 10px;margin:3px;font-size:13px}
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:20}
+#sheet .in{background:var(--card);width:100%;max-width:430px;max-height:88vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px}
+.sum li{margin:8px 0}.sum a{color:var(--acc);margin-left:6px;cursor:pointer}
+.big{font-size:72px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:10px 0}
+.donebtn{width:100%;height:150px;border-radius:24px;font-size:40px;font-weight:800;background:var(--acc);color:#04210f;border:none;margin:10px 0;cursor:pointer}
+.stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin:16px 0}.stepper button{width:72px;height:72px;border-radius:50%;font-size:34px;background:var(--card2);color:#fff;border:1.5px solid var(--line)}.stepper .v{font-size:56px;font-weight:800;min-width:110px;text-align:center}
+#cap{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(20,24,34,.96);border-top:1px solid var(--line);padding:10px 16px;font-size:14px;display:none;z-index:10}
+#cap b{color:var(--acc)}
+.mic{display:inline-block;font-size:12px;padding:3px 8px;border-radius:8px;background:var(--card2);color:var(--mut)}.mic.on{background:#11382a;color:var(--acc)}
+.pill{display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-ready{background:#11382a;color:var(--acc)}.p-gentle{background:#3a2f10;color:var(--warn)}.p-notReady{background:#3d1f2a;color:#ffc2d1}.p-notAssessed{background:#262b38;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#24304a;padding:10px 16px;border-radius:12px;display:none;z-index:30;font-size:14px;max-width:90%}
+select,input[type=month],input[type=time]{background:var(--card2);color:var(--tx);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:16px;min-height:44px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+@media (prefers-reduced-motion:no-preference){.prog i{transition:width .3s}}
+</style>
+</head>
+<body>
+<div id="phone">
+ <div id="draft"><span>⚠ Draft prototype, reference only — not medical advice</span><button id="resetBtn" onclick="resetAll()" aria-label="Reset all prototype data">Reset</button></div>
+ <div id="top"></div>
+ <main id="app" aria-live="polite"></main>
+</div>
+<div id="sheet" role="dialog" aria-modal="true"><div class="in" id="sheetIn"></div></div>
+<div id="cap" aria-live="polite"></div>
+<div id="toast" role="status"></div>
+<script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
+<noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
+<script>
+"use strict";
+/* ===== Fixed safety statements (exact wording, do not edit) ===== */
+const SAFE={
+ REF:"FitcoachAI is for general fitness reference only. It is not medical advice. Please ask your family doctor before starting a new exercise routine, and stop if anything feels wrong.",
+ DOC:"Because of your answers, please check with your family doctor before you exercise with FitcoachAI. Until then, we'll keep everything gentle. This app can't tell whether exercise is safe for you — only a doctor who knows you can.",
+ STOP:"Stop exercising and get medical help right away if you have chest pain or pressure, trouble breathing that doesn't settle with rest, fainting or feeling like you'll faint, a sudden severe headache, sudden weakness or numbness on one side, or a racing or irregular heartbeat. If it feels like an emergency, call your local emergency number.",
+ PAIN:"Please see a doctor before exercising this area if the pain is severe, getting worse, started after a fall or accident, wakes you at night, or comes with numbness, tingling, weakness, swelling, or fever.",
+ FOOD:"Our food tips are general. For advice about your own diet, especially if you're pregnant, breastfeeding, or managing a health condition, please talk to your doctor or a registered dietitian."
+};
+const safe=k=>`<div class="safe ${({STOP:'stop',DOC:'doc',FOOD:'food',PAIN:'pain'})[k]||''}" role="note" data-safe="${k}">${SAFE[k]}</div>`;
+
+/* ===== Storage & event log (UTC ISO timestamps + device time zone) ===== */
+const KP='fcai_proto_state_v1',KL='fcai_proto_log_v1';
+const TZ=(()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'unknown'}catch(e){return 'unknown'}})();
+const nowISO=()=>new Date().toISOString();
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function logEv(type,data){const L=lsGet(KL)||[];L.push({type,atUTC:nowISO(),timeZoneID:TZ,utcOffsetMin:-new Date().getTimezoneOffset(),data:data==null?null:data});lsSet(KL,L)}
+function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p:{
+ disclaimerAccepted:false,disclaimerAcceptedAt:null,disclaimerVersion:'safe-ref-1.0',onboardingStartedAt:null,
+ appLocale:navigator.language||'en',timeZoneID:TZ,privacyNoticeShownAt:null,privacyNoticeVersion:'privacy-1.0',
+ ageRange:null,sexForReference:null,primaryGoal:'habit',goalSetAt:null,experience:null,
+ bodyAreas:[],bodyNone:false,movementNeeds:[],limbDifference:[],
+ hs:{h1:null,h2:null,h3:null,h4:null,h5:null,h6:null,chestRecent:null,faintRecent:null,answeredAt:null,version:'hs-1.0'},
+ postpartum:{status:null,birthMonth:'',birthType:null,clearance:null},postpartumMode:false,
+ safetyMode:'standard',safetyModeReasons:[],doctorClearanceSelfReportedAt:null,
+ jobActivity:null,workPattern:null,availableItems:[],quietMode:false,
+ days:'3',targetMinutes:20,coachingStyle:'calm',voiceCoaching:true,nudgeMode:'learned',nudgeTime:'18:00',
+ healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
+ patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
+let S=lsGet(KP)||freshState();
+function save(){lsSet(KP,S)}
+function resetAll(){if(!confirm('Reset all prototype data (profile + event log) on this device?'))return;stopAllMedia();localStorage.removeItem(KP);localStorage.removeItem(KL);S=freshState();B=null;closeSheet();logEv('reset');save();render()}
+
+/* ===== Helpers ===== */
+const P=()=>S.p;
+const isYes=v=>v==='yes'||v==='unsure'; // APPROVED: "Not sure" counts as "Yes"
+function getPath(path){return path.split('.').reduce((o,k)=>o==null?o:o[k],S.p)}
+function setPath(path,v){const ks=path.split('.');let o=S.p;ks.slice(0,-1).forEach(k=>o=o[k]);o[ks[ks.length-1]]=v}
+function pick(path,v){setPath(path,v);if(path==='jobActivity'&&v==='notWorking')S.p.workPattern='na';save();render()}
+function toggle(path,v,exclusive){let a=getPath(path)||[];if(a.includes(v))a=a.filter(x=>x!==v);else if(v===exclusive)a=[v];else a=a.filter(x=>x!==exclusive).concat(v);setPath(path,a);save();render()}
+function chips(path,opts,multi,exclusive){const cur=getPath(path);return `<div class="chips" role="group">${opts.map(([v,l])=>{const on=multi?(cur||[]).includes(v):String(cur)===String(v);
+ const call=multi?`toggle(${JSON.stringify(path)},${JSON.stringify(v)},${JSON.stringify(exclusive||'')})`:`pick(${JSON.stringify(path)},${JSON.stringify(v)})`;
+ return `<button class="chip ${on?'on':''}" aria-pressed="${on}" data-v="${v}" onclick='${call}'>${l}</button>`}).join('')}</div>`}
+const listChips=(path,opts,multi)=>`<div class="list">${chips(path,opts,multi)}</div>`;
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>el.style.display='none',2600)}
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+
+/* ===== Labels ===== */
+const AGES=[['under18','Under 18'],['r18_29','18–29'],['r30_39','30–39'],['r40_49','40–49'],['r50_59','50–59'],['r60_69','60–69'],['r70plus','70+']];
+const SEX=[['female','Female'],['male','Male'],['undisclosed','Prefer not to say']];
+const GOALS=[['energy','Feel more energetic day to day'],['strength','Get stronger'],['lessStiffness','Move with less stiffness or discomfort'],['habit','Build a habit I can actually keep'],['postBaby','Get back into exercise after a baby'],['returnFromInjury','Get back into exercise after an injury or time off'],['weight','Manage my weight']];
+const EXP=[['new','<b>I&#39;m new to exercise</b> — or it&#39;s been years'],['lapsed','<b>I used to be active, but it&#39;s been a while</b> — more than a few months'],['occasional','<b>I do something now and then</b> — about once a week or less'],['regular','<b>I&#39;m active most weeks</b> — 2 or more times a week']];
+const EXPS={new:'New to exercise',lapsed:'Used to be active',occasional:'Now and then',regular:'Active most weeks'};
+const JOBS=[['sitting','<b>Mostly sitting</b> (desk, driving)'],['onFeet','<b>On my feet</b> (standing or walking a lot)'],['physical','<b>Physical work</b> (lifting, carrying, climbing)'],['veryHeavy','<b>Very heavy physical work</b> (most of the day)'],['caregiving','<b>Caring for others at home</b> (kids, family)'],['notWorking','<b>Not working right now</b>'],['varies','<b>It varies a lot</b>']];
+const WORK=[['regularDay','Regular daytime hours'],['eveningNight','Evening or night shifts'],['rotating','Rotating shifts'],['irregular','It changes week to week'],['na','Doesn&#39;t apply']];
+const ITEMS=[['wall','A wall'],['chair','A sturdy chair (no wheels)'],['stairs','Stairs or a sturdy step'],['floor','Floor space to lie down'],['towel','A towel'],['backpack','A backpack I could add weight to'],['bands','Resistance bands'],['weights','Dumbbells or kettlebells'],['none','None of these']];
+const NEEDS=[['seated','I use a wheelchair or exercise seated'],['limb','I have a limb difference or amputation'],['oneSide','I have limited use of one side of my body'],['balance','My balance isn&#39;t great'],['floorHard','Getting down to the floor or back up is hard'],['ratherNot','I&#39;d rather not say more']];
+const LIMBS=[['armL','Arm (left)'],['armR','Arm (right)'],['legL','Leg (left)'],['legR','Leg (right)']];
+const TRIG=[['squat','Bending down / squatting'],['kneel','Kneeling'],['stairs','Stairs or stepping up'],['jump','Jumping or running'],['twist','Twisting'],['overhead','Lifting or reaching overhead'],['push','Pushing (like a push-up)'],['pull','Pulling'],['grip','Gripping or weight on hands'],['bend','Bending forward / picking things up'],['lying','Lying on my back or front'],['still','Standing or sitting a long time'],['notSure','Not sure']];
+const REGIONS={neck:'neck',upperBack:'upper back',lowerBack:'lower back',shoulderL:'left shoulder',shoulderR:'right shoulder',elbowL:'left elbow',elbowR:'right elbow',wristL:'left wrist & hand',wristR:'right wrist & hand',chest:'chest',abdomen:'abdomen / core',pelvic:'pelvic floor & groin',hipL:'left hip',hipR:'right hip',kneeL:'left knee',kneeR:'right knee',ankleL:'left ankle & foot',ankleR:'right ankle & foot',jaw:'jaw',ribs:'ribs',tailbone:'tailbone',otherArea:'other area'};
+const PATTERNS=['squat','push','hinge','core','balance','cardio'];
+const PSHORT={squat:'Legs: sitting & standing',push:'Upper body: pushing',hinge:'Hips & back: bending',core:'Core: holding steady',balance:'Balance',cardio:'Heart & breathing'};
+/* Trigger -> baseline patterns (spec S6 table, mapped onto the 6 baseline patterns) */
+const TRIG_MAP={squat:['squat'],kneel:[],stairs:['balance','cardio'],jump:['cardio'],twist:['core'],overhead:[],push:['push'],pull:[],grip:['push','core'],bend:['hinge'],lying:['hinge','core'],still:[],notSure:[]};
+/* Region -> patterns that load it (used for "Not sure" triggers and severe pain) */
+const REGION_LOAD={neck:['push','core'],upperBack:['push','core'],lowerBack:['hinge','core','squat'],shoulderL:['push','core'],shoulderR:['push','core'],elbowL:['push','core'],elbowR:['push','core'],wristL:['push','core'],wristR:['push','core'],chest:['push'],abdomen:['core','hinge'],pelvic:['core','hinge','cardio'],hipL:['squat','hinge','balance'],hipR:['squat','hinge','balance'],kneeL:['squat','balance','cardio'],kneeR:['squat','balance','cardio'],ankleL:['squat','balance','cardio'],ankleR:['squat','balance','cardio'],jaw:[],ribs:['core','push'],tailbone:['hinge','core'],otherArea:PATTERNS.slice()};
+
+/* ===== Engine ===== */
+function healthAnswered(){const h=P().hs;return ['h1','h2','h3','h4','h5','h6'].every(k=>h[k])&&(!isYes(h.h2)||h.chestRecent)&&(!isYes(h.h4)||h.faintRecent)}
+function computeSafety(){const p=P(),h=p.hs,r=[];
+ if(isYes(h.h1))r.push('heartCondition');if(isYes(h.h2))r.push('chestPain');if(isYes(h.h3))r.push('highBP');if(isYes(h.h4))r.push('dizzinessFainting');if(isYes(h.h5))r.push('pregnancyPostpartum');if(isYes(h.h6))r.push('hrMeds');
+ if(p.bodyAreas.filter(a=>a.status==='current').length>=5)r.push('manyPainAreas');
+ if(p.postpartumMode)r.push('postpartum');
+ p.safetyModeReasons=r;p.safetyMode=S.stopReason?'paused':(r.length?'conservative':'standard')}
+const gentleMode=()=>P().safetyMode!=='standard';
+const RANK={notAssessed:0,ready:0,gentle:1,notReady:2};
+function computeReadiness(){const p=P(),R={};PATTERNS.forEach(x=>R[x]={level:'notAssessed',why:[]});
+ const set=(pat,lvl,why)=>{if(RANK[lvl]>=RANK[R[pat].level])R[pat].level=lvl;R[pat].why.unshift(why)};
+ p.bodyAreas.forEach(a=>{const name=REGIONS[a.region];const trig=a.triggers.length?a.triggers:['notSure'];
+  const pats=[...new Set(trig.flatMap(t=>TRIG_MAP[t]||[]))],regionPats=REGION_LOAD[a.region]||[],unsure=trig.includes('notSure');
+  if(a.status==='current'){
+   if((a.painScore!=null&&a.painScore>=7)||unsure)regionPats.forEach(x=>set(x,'notReady',`to protect your ${name}`));
+   else{pats.forEach(x=>set(x,'notReady',`to protect your ${name}`));regionPats.filter(x=>!pats.includes(x)).forEach(x=>set(x,'gentle',`extra care for your ${name}`))}
+  }else{const blocked=a.status==='surgery'&&a.surgeryCleared!=='yes';const tgt=unsure?regionPats:(pats.length?pats:regionPats);
+   tgt.forEach(x=>set(x,blocked?'notReady':'gentle',blocked?`until your surgeon or physio says your ${name} is okay to exercise`:`extra care for your ${name}`))}});
+ if(isYes(p.hs.h4))set('balance','notReady','because of dizziness or fainting on the health check');
+ if(p.postpartumMode){set('core','gentle','postpartum: breathing and gentle core first');set('cardio','gentle','postpartum: no impact')}
+ p.patternReadiness=R}
+function stepCount(){const o=['s3','s4','s5','s6','s7','s8','s9','s10','s11'];const i=o.indexOf(S.screen==='s7a'?'s7':S.screen);return i<0?null:i+1}
+
+/* ===== Navigation ===== */
+function go(scr,push){if(push!==false&&S.screen!==scr)S.hist.push(S.screen);S.screen=scr;logEv('screen_view',{screen:scr});save();render();document.getElementById('app').scrollTop=0;window.scrollTo(0,0)}
+function back(){if(B)return;const prev=S.hist.pop();if(prev){if(S.screen==='stop')S.stopReason=null;S.screen=prev;computeSafety();save();render()}}
+function hardStop(reason){S.stopReason=reason;P().safetyMode='paused';logEv('hard_stop',{reason});go('stop')}
+function weeksSince(month){if(!month)return null;const [y,m]=month.split('-').map(Number);if(!y||!m)return null;return (Date.now()-new Date(y,m-1,15))/6048e5}
+function next(){const p=P(),s=S.screen;let t=null;
+ switch(s){
+ case 's1':if(!p.disclaimerAccepted)return;p.disclaimerAcceptedAt=p.disclaimerAcceptedAt||nowISO();p.onboardingStartedAt=p.onboardingStartedAt||nowISO();logEv('disclaimer_accepted',{version:p.disclaimerVersion});t='s2';break;
+ case 's2':p.privacyNoticeShownAt=nowISO();t='s3';break;
+ case 's3':if(!p.ageRange||!p.sexForReference)return toast('Please answer both questions.');if(p.ageRange==='under18')return hardStop('under18');t='s4';break;
+ case 's4':p.goalSetAt=nowISO();t='s5';break;
+ case 's5':if(!p.experience)return toast('Please pick one.');t='s6';break;
+ case 's6':if(!p.bodyNone&&!p.bodyAreas.length&&!p.movementNeeds.length)return toast('Tap an area, add a movement need, or tap "Nothing right now".');t='s7';break;
+ case 's7':{if(!healthAnswered())return toast('Please answer every question (and any follow-up).');const h=p.hs;h.answeredAt=nowISO();logEv('health_check',Object.assign({},h));
+  if(isYes(h.h2)&&isYes(h.chestRecent))return hardStop('chest');
+  if(isYes(h.h4)&&isYes(h.faintRecent))return hardStop('faint');
+  if(isYes(h.h5)||p.primaryGoal==='postBaby')t='s7a';else{p.postpartumMode=false;t='s8'}break}
+ case 's7a':{const pp=p.postpartum;if(!pp.status)return toast('Please choose which applies.');
+  if(pp.status==='none'){p.postpartumMode=false;t='s8';break}
+  if(pp.status==='pregnant')return hardStop('pregnant');
+  if(!pp.clearance)return toast('Please answer the clearance question.');
+  const w=weeksSince(pp.birthMonth);
+  if(w==null||w<12||!pp.birthType||pp.birthType==='undisclosed')return hardStop('earlyPostpartum');
+  if(pp.clearance!=='yes')return hardStop('clearance');
+  p.postpartumMode=true;
+  if(pp.birthType==='cesarean'&&!p.bodyAreas.some(a=>a.region==='abdomen'))p.bodyAreas.push({region:'abdomen',status:'oldCareful',triggers:['notSure'],painScore:null,reportedAt:nowISO(),updatedAt:nowISO(),history:[{at:nowISO(),event:'auto-added (C-section)'}]});
+  t='s8';break}
+ case 's8':if(!p.jobActivity||!p.workPattern)return toast('Please answer both questions.');t='s9';break;
+ case 's9':p.equipmentAnsweredAt=nowISO();t='s10';break;
+ case 's10':{const d=p.days==='6'?6:Number(p.days);computeSafety();
+  if(d>=5&&(['new','lapsed'].includes(p.experience)||gentleMode())&&!S._daysAsked){S._daysAsked=true;return openSheet(`<h2>Starting with 3 days usually works better — want to start there?</h2><button class="btn" onclick="P().days='3';P().keepExtraLight=false;closeSheet();next()">Start with 3</button><button class="btn sec" onclick="P().keepExtraLight=true;closeSheet();next()">Keep my choice</button><p class="mut sm">If you keep it, the extra days become light / mobility days.</p>`)}
+  p.scheduleAnsweredAt=nowISO();t='s11';break}
+ case 's11':if(p.nudgeMode==='fixedTime'&&!p.nudgeTime)return toast('Pick a time.');t='s12';break;
+ case 's12':t='s13';break;
+ case 's13':computeSafety();computeReadiness();p.onboardingCompletedAt=nowISO();const snap=JSON.parse(JSON.stringify(p));delete snap.profileSnapshot;p.profileSnapshot=snap;logEv('onboarding_completed',{safetyMode:p.safetyMode,reasons:p.safetyModeReasons});t='s14';break;
+ }
+ computeSafety();
+ if(S.returnTo&&t&&t!=='s7a'&&s!=='s13'){t=S.returnTo;S.returnTo=null}
+ if(t)go(t)}
+function editFrom(scr){S.returnTo='s13';go(scr)}
+/* ===== Screens ===== */
+const SC={};
+SC.s1=()=>`<h1>Hi, I'm your FitcoachAI coach.</h1>
+<p>I'll help you build a routine that fits your body, your schedule, and your life — starting with no equipment.</p>
+<p>First, a few quick questions (about 3 minutes). Then we'll do a short, gentle check-in workout so I can see where you're starting. Over the next week, I'll keep learning what works for you.</p>
+<p><b>One important thing:</b></p>${safe('REF')}
+<p>I can't promise specific results. What I can do is help you move safely and keep showing up.</p>
+<label class="chk"><input id="ack" type="checkbox" ${P().disclaimerAccepted?'checked':''} onchange="P().disclaimerAccepted=this.checked;save();render()" aria-label="I understand that FitcoachAI is for reference only and isn't medical advice. ${esc(SAFE.REF)}"> I understand that FitcoachAI is for reference only and isn't medical advice.</label>
+<button class="btn" id="next" ${P().disclaimerAccepted?'':'disabled'} onclick="next()">Let's get started</button>`;
+SC.s2=()=>`<h1>Your data stays on your phone.</h1><ul>
+<li>There's no account and no sign-up.</li><li>Your answers, workouts, and health info are stored <b>only on this iPhone</b>.</li>
+<li>We don't send your data to our servers — we don't have any.</li><li>You can delete everything at any time in <b>Settings → Delete my data</b>.</li></ul>
+<p class="mut"><i>Heads up: if you use iCloud or computer backups for your iPhone, those backups may include FitcoachAI data, protected by Apple. If you delete the app without a backup, your history is gone.</i></p>
+<p class="mut sm">(Prototype: data is saved in this browser's localStorage. Use <b>Reset</b> at the top to delete it.)</p>
+<button class="btn" id="next" onclick="next()">Sounds good</button>`;
+SC.s3=()=>`<h1>A little about you</h1><h2>How old are you?</h2>${chips('ageRange',AGES)}
+<h2>What sex were you assigned at birth?</h2><p class="mut sm"><i>This only helps us compare your check-in results to typical ranges.</i></p>${chips('sexForReference',SEX)}
+<button class="btn" id="next" onclick="next()">Next</button>`;
+SC.s4=()=>`<h1>What matters most to you right now?</h1><p class="mut"><i>Pick one. You can change it any time.</i></p>${listChips('primaryGoal',GOALS.map(([v,l])=>[v,`<b>${l}</b>`]))}
+${P().primaryGoal==='weight'?`<p class="mut"><i>We'll focus on regular movement and steady habits, which help most people feel better. We don't give diet plans or promise weight loss.</i></p>${safe('FOOD')}`:''}
+<button class="btn" id="next" onclick="next()">Next</button>`;
+SC.s5=()=>`<h1>How would you describe your exercise lately?</h1>${listChips('experience',EXP)}<p class="mut"><i>No wrong answers. Your check-in workout will fine-tune this.</i></p><button class="btn" id="next" onclick="next()">Next</button>`;
+
+/* --- Body map (front/back, tappable SVG regions). Front view: user's left is on the image's right. --- */
+let mapSide='front';
+function svgBody(side){const on=r=>P().bodyAreas.some(a=>a.region===r)?'on':'';
+ const C=(id,cx,cy,r)=>`<circle class="rg ${on(id)}" data-r="${id}" cx="${cx}" cy="${cy}" r="${r}" role="button" tabindex="0" aria-label="${REGIONS[id]}" onclick="mapTap('${id}')"><title>${REGIONS[id]}</title></circle>`;
+ const Rc=(id,x,y,w,h)=>`<rect class="rg ${on(id)}" data-r="${id}" x="${x}" y="${y}" width="${w}" height="${h}" rx="8" role="button" tabindex="0" aria-label="${REGIONS[id]}" onclick="mapTap('${id}')"><title>${REGIONS[id]}</title></rect>`;
+ const f=side==='front';const L=f?'L':'R',Rt=f?'R':'L'; // image-left side id suffix
+ const limbs=[C('shoulder'+Rt,66,80,12),C('shoulder'+L,154,80,12),C('elbow'+Rt,52,128,10),C('elbow'+L,168,128,10),C('wrist'+Rt,42,176,11),C('wrist'+L,178,176,11),C('hip'+Rt,84,166,11),C('hip'+L,136,166,11),C('knee'+Rt,92,250,12),C('knee'+L,128,250,12),Rc('ankle'+Rt,80,318,24,22),Rc('ankle'+L,116,318,24,22)];
+ const trunk=f?[Rc('chest',80,74,60,36),Rc('abdomen',84,112,52,40),Rc('pelvic',90,154,40,22)]:[Rc('neck',97,50,26,18),Rc('upperBack',80,72,60,40),Rc('lowerBack',84,114,52,36)];
+ const body=`<g class="body"><circle cx="110" cy="28" r="20"/><rect x="101" y="46" width="18" height="18"/><path d="M70 66 h80 l22 112 h-16 l-18-78 v78 l8 170 h-22 l-12-140 h-4 l-12 140 h-22 l8-170 v-78 l-18 78 h-16z"/></g>`;
+ return `<svg viewBox="0 0 220 350" role="img" aria-label="${side} body map">${body}${trunk.join('')}${limbs.join('')}<text x="4" y="12" fill="#9aa4b8" font-size="10">${f?'Your right':'Your left'}</text><text x="216" y="12" fill="#9aa4b8" font-size="10" text-anchor="end">${f?'Your left':'Your right'}</text></svg>`}
+function mapTap(r){if(P().bodyAreas.some(a=>a.region===r)){P().bodyAreas=P().bodyAreas.filter(a=>a.region!==r);logEv('body_area_removed',{region:r});save();render();toast(`Removed ${REGIONS[r]}`);return}openRegion(r)}
+SC.s6=()=>{const p=P();return `<h1>Anything we should be careful with?</h1><p class="mut"><i>Tap any area that's sore, injured, or needs extra care. Tap again to remove it.</i></p>
+<div class="row"><button class="chip ${mapSide==='front'?'on':''}" onclick="mapSide='front';render()">Front</button><button class="chip ${mapSide==='back'?'on':''}" onclick="mapSide='back';render()">Back</button></div>
+<div class="bm">${svgBody(mapSide)}</div>
+<div>${p.bodyAreas.map(a=>`<span class="tag">${REGIONS[a.region]} · ${({current:'hurts now',oldCareful:'careful',surgery:'surgery'})[a.status]} <a onclick="openRegion('${a.region}')" style="cursor:pointer" aria-label="Edit ${REGIONS[a.region]}">✎</a></span>`).join('')}</div>
+<details class="card"><summary>Choose from a list (also jaw, ribs, tailbone, other…)</summary><div class="chips">${Object.keys(REGIONS).map(r=>`<button class="chip ${p.bodyAreas.some(a=>a.region===r)?'on':''}" onclick="openRegion('${r}')">${REGIONS[r]}</button>`).join('')}</div></details>
+<button class="btn sec" id="nothing" onclick="P().bodyNone=true;P().bodyAreas=[];save();next()">Nothing right now</button>
+<details class="card" ${p.movementNeeds.length?'open':''}><summary>Anything else about how you move?</summary>${listChips('movementNeeds',NEEDS,true)}
+${p.movementNeeds.includes('limb')?`<p class="sm">Which?</p>${chips('limbDifference',LIMBS,true)}`:''}</details>
+${p.bodyAreas.filter(a=>a.status==='current').length>=5?`<div class="card">That's a lot to deal with. We'll start very gently and you're in charge — tell us any time something doesn't feel right.</div>`:''}
+${safe('PAIN')}
+<button class="btn" id="next" onclick="if(P().bodyAreas.length||P().movementNeeds.length)P().bodyNone=false;next()">Next</button>`};
+let draftArea=null;
+function openRegion(r){const ex=P().bodyAreas.find(a=>a.region===r);draftArea=ex?JSON.parse(JSON.stringify(ex)):{region:r,status:null,triggers:[],painScore:null,surgeryCleared:null,history:[]};renderSheet()}
+function renderSheet(){const a=draftArea,n=REGIONS[a.region];
+ const ch=(k,v,l,multi)=>{const on=multi?a.triggers.includes(v):a[k]===v;return `<button class="chip ${on?'on':''}" aria-pressed="${on}" data-v="${v}" onclick="sheetSet('${k}','${v}',${!!multi})">${l}</button>`};
+ const severe=(a.painScore!=null&&a.painScore>=7)||(a.status==='current'&&a.triggers.includes('notSure'));
+ openSheet(`<h2>Your ${n}</h2><h3>How is it right now?</h3><div class="list chips">${ch('status','current','Hurts now or recently (last 6 weeks)')}${ch('status','oldCareful','Old injury — mostly fine, but I&#39;m careful')}${ch('status','surgery','Had surgery here')}</div>
+ ${a.status==='surgery'?`<h3>Has your surgeon or physio said you can exercise this area?</h3><div class="chips">${ch('surgeryCleared','yes','Yes')}${ch('surgeryCleared','no','Not yet')}${ch('surgeryCleared','unsure','Not sure')}</div>`:''}
+ <h3>What tends to set it off? <span class="mut sm">(pick any)</span></h3><div class="chips">${TRIG.map(([v,l])=>ch('triggers',v,l,true)).join('')}</div>
+ <h3>How much does it bother you on a typical day? <span class="mut sm">(optional)</span></h3>
+ <input type="range" min="0" max="10" value="${a.painScore==null?0:a.painScore}" oninput="draftArea.painScore=+this.value;document.getElementById('pv').textContent=this.value" onchange="renderSheet()" aria-label="Pain 0 to 10">
+ <p class="sm mut">0 = not at all, 10 = worst imaginable · <b id="pv">${a.painScore==null?'not set':a.painScore}</b></p>
+ ${safe('PAIN')}${severe?`<p><b>We'll leave this area out of your plan for now.</b></p>`:''}
+ <button class="btn" id="saveArea" ${a.status&&(a.status!=='surgery'||a.surgeryCleared)?'':'disabled'} onclick="saveArea()">Save</button>
+ ${P().bodyAreas.some(x=>x.region===a.region)?`<button class="btn sec" onclick="removeArea()">Remove this area</button>`:''}<button class="btn sec" onclick="draftArea=null;closeSheet()">Cancel</button>`)}
+function sheetSet(k,v,multi){const a=draftArea;if(multi){if(v==='notSure')a.triggers=a.triggers.includes(v)?[]:[v];else a.triggers=a.triggers.includes(v)?a.triggers.filter(x=>x!==v):a.triggers.filter(x=>x!=='notSure').concat(v)}else a[k]=v;renderSheet()}
+function saveArea(){const a=draftArea;if(!a.triggers.length)a.triggers=['notSure'];const t=nowISO();a.reportedAt=a.reportedAt||t;a.updatedAt=t;a.history=(a.history||[]).concat({at:t,status:a.status,triggers:a.triggers,painScore:a.painScore});
+ P().bodyAreas=P().bodyAreas.filter(x=>x.region!==a.region).concat(a);P().bodyNone=false;logEv('body_area_saved',a);draftArea=null;closeSheet();computeSafety();save();render()}
+function removeArea(){P().bodyAreas=P().bodyAreas.filter(x=>x.region!==draftArea.region);logEv('body_area_removed',{region:draftArea.region});draftArea=null;closeSheet();save();render()}
+function openSheet(h){document.getElementById('sheetIn').innerHTML=h;document.getElementById('sheet').style.display='flex'}
+function closeSheet(){document.getElementById('sheet').style.display='none'}
+
+/* --- Health check H1–H6 --- */
+const HQ=[['h1','Has a doctor ever said you have a heart problem, or that you should only exercise with medical advice?'],['h2','Do you ever get chest pain, pressure, or tightness — when active or at rest?'],['h3','Has a doctor said you have high blood pressure?'],['h4','Do you ever feel dizzy, light-headed, or faint, or have you passed out?'],['h5','Are you pregnant, or have you had a baby in the last 12 months?'],['h6','Do you take any medicine that affects your heart rate or blood pressure? <span class="mut sm"><i>(for example, beta-blockers — if unsure, check the label or ask your pharmacist)</i></span>']];
+const TRI=[['no','No'],['yes','Yes'],['unsure','Not sure']];
+const seg=path=>{const cur=getPath(path);return `<div class="seg">${TRI.map(([v,l])=>`<button class="chip ${cur===v?'on':''}" aria-pressed="${cur===v}" data-q="${path}" data-v="${v}" onclick="pick('${path}','${v}')">${l}</button>`).join('')}</div>`};
+SC.s7=()=>{const h=P().hs;return `<h1>A quick health check</h1><p class="mut"><i>These questions help keep you safe. Answer "Not sure" if you don't know — that's okay.</i></p>
+${HQ.map(([k,q],i)=>`<div class="hq"><b>H${i+1}. ${q}</b>${seg('hs.'+k)}
+ ${k==='h2'&&isYes(h.h2)?`<div class="fu"><b>Has this happened in the last few weeks, or does it happen when you're active?</b>${seg('hs.chestRecent')}</div>`:''}
+ ${k==='h4'&&isYes(h.h4)?`<div class="fu"><b>Have you fainted in the last few months?</b>${seg('hs.faintRecent')}</div>`:''}</div>`).join('')}
+${['h1','h2','h3','h4','h5','h6'].some(k=>isYes(h[k]))?`<div class="card">🟡 <b>Gentle mode will be on.</b>${safe('DOC')}</div>`:''}
+${safe('STOP')}<button class="btn" id="next" onclick="next()">Next</button>`};
+SC.s7a=()=>{const pp=P().postpartum;const c=(k,v,l)=>`<button class="chip ${pp[k]===v?'on':''}" data-v="${v}" onclick="P().postpartum['${k}']='${v}';save();render()">${l}</button>`;const askedViaGoal=P().hs.h5==='no';
+ return `<h1>Congratulations — and thank you for telling us.</h1>${askedViaGoal?`<p class="mut">You picked "Get back into exercise after a baby." <b>When was your baby born?</b></p>`:''}
+<h2>Which applies to you?</h2><div class="list chips">${c('status','pregnant','I&#39;m pregnant now')}${c('status','hadBaby','I had a baby')}${askedViaGoal?c('status','none','No baby in the last 12 months'):''}</div>
+${pp.status==='hadBaby'?`<h3>When?</h3><input type="month" id="bm" value="${esc(pp.birthMonth)}" onchange="P().postpartum.birthMonth=this.value;save()" aria-label="Birth month and year">
+<h3>How was your baby born?</h3><div class="chips">${c('birthType','vaginal','Vaginal birth')}${c('birthType','cesarean','C-section')}${c('birthType','undisclosed','Prefer not to say')}</div>
+<h3>Has your doctor, midwife, or physio said you're ready to start exercising again?</h3><div class="chips">${c('clearance','yes','Yes')}${c('clearance','no','Not yet')}${c('clearance','unsure','Not sure')}</div>`:''}
+<button class="btn" id="next" onclick="next()">Next</button>`};
+const STOPCOPY={under18:'FitcoachAI is built for adults (18+) for now.',pregnant:"FitcoachAI isn't built for pregnancy yet. Your doctor or midwife can tell you what's right for you.",earlyPostpartum:"The first weeks after birth are for recovery. We'll be here when you're ready.",clearance:'Please get the go-ahead from your doctor, midwife, or physio first.'};
+SC.stop=()=>{const r=S.stopReason,rl=r==='earlyPostpartum'?'Remind me when my baby is 12 weeks old':'Remind me in a week';return `<h1 id="pauseTitle">Let's pause here.</h1>
+${STOPCOPY[r]?`<p><b>${STOPCOPY[r]}</b></p>`:''}
+<p>Based on what you told us, it isn't safe for FitcoachAI to plan your exercise right now. Please talk to your family doctor first.</p>
+${safe('STOP')}
+<p>When you've spoken with your doctor, you can come back and update your answers.</p>
+<button class="btn" onclick="updateAnswers()">Update my answers</button>
+<button class="btn sec" onclick="remind('${rl}')">${rl}</button>
+<p class="mut sm">No plan, no assessment. Your answers are kept on this device.</p>`};
+function updateAnswers(){const r=S.stopReason;S.stopReason=null;S.hist=S.hist.filter(x=>x!=='stop');computeSafety();go(r==='under18'?'s3':['pregnant','earlyPostpartum','clearance'].includes(r)?'s7a':'s7',false)}
+function remind(l){logEv('reminder_requested',{label:l,reason:S.stopReason});toast('Noted (stub — this prototype has no notifications).')}
+SC.s8=()=>`<h1>What does a typical work day look like for your body?</h1><p class="mut sm">Have more than one job? Pick the most physical one.</p>${listChips('jobActivity',JOBS)}
+<h2>When do you usually work?</h2>${chips('workPattern',WORK)}<button class="btn" id="next" onclick="next()">Next</button>`;
+SC.s9=()=>{const p=P(),seatedN=p.movementNeeds.includes('seated');const items=seatedN?ITEMS.map(x=>x[0]==='chair'?['chair','Stable surface for wheelchair brakes']:x):ITEMS;
+ return `<h1>Where will you usually work out?</h1><p class="mut"><i>You don't need any equipment — we'll start with just your body.</i></p>
+<h2>What do you have nearby? <span class="mut sm">(pick any)</span></h2>${chips('availableItems',items,true,'none')}
+${p.availableItems.includes('chair')&&!seatedN?`<p class="sm mut">Chairs with wheels can roll — please use one without.</p>`:''}
+${p.availableItems.some(x=>['bands','weights','backpack'].includes(x))?`<p class="sm mut">Later, we can add your equipment. Your first plan uses body weight only.</p>`:''}
+<h2>Need to keep it quiet? <span class="mut sm">(sleeping baby, neighbours, night shifts)</span></h2>
+<div class="chips"><button class="chip ${p.quietMode?'on':''}" onclick="P().quietMode=true;save();render()">Yes, no jumping or noise</button><button class="chip ${!p.quietMode?'on':''}" onclick="P().quietMode=false;save();render()">No, I'm fine</button></div>
+<button class="btn" id="next" onclick="next()">Next</button>`};
+SC.s10=()=>`<h1>How much time can you realistically give?</h1><p class="mut"><i>Pick what fits a normal week — not your best week.</i></p>
+<h2>Days per week</h2>${chips('days',[['1','1'],['2','2'],['3','3'],['4','4'],['5','5'],['6','6+'],['var','It changes a lot']])}
+<h2>Minutes per session</h2>${chips('targetMinutes',[[10,'10'],[15,'15'],[20,'20'],[30,'30'],[45,'45+']])}
+<button class="btn" id="next" onclick="S._daysAsked=false;next()">Next</button>`;
+SC.s11=()=>{const p=P(),shift=['eveningNight','rotating','irregular'].includes(p.workPattern);
+ return `<h1>How should I coach you?</h1><div class="list chips">
+<button class="chip ${p.coachingStyle==='calm'?'on':''}" onclick="pick('coachingStyle','calm')"><b>Calm and encouraging</b> — gentle reminders, lots of reassurance</button>
+<button class="chip ${p.coachingStyle==='direct'?'on':''}" onclick="pick('coachingStyle','direct')"><b>Direct and pushy</b> — I'll nudge you to show up and push a bit (but never through pain)</button></div>
+<h2>Voice coaching during workouts</h2><div class="chips"><button class="chip ${p.voiceCoaching?'on':''}" onclick="P().voiceCoaching=true;save();render()">On — talk me through it</button><button class="chip ${!p.voiceCoaching?'on':''}" onclick="P().voiceCoaching=false;save();render()">Off — just show me on screen</button></div>
+<h2>Daily nudge</h2>${chips('nudgeMode',[['fixedTime','Yes, around a set time'],['learned','Learn the best time for me'],['off','No nudges']])}
+${p.nudgeMode==='fixedTime'?`<input type="time" value="${esc(p.nudgeTime)}" onchange="P().nudgeTime=this.value;save()" aria-label="Nudge time">${shift?'<p class="sm mut">Tip: with changing shifts, letting me learn usually works better.</p>':''}`:''}
+<button class="btn" id="next" onclick="next()">Next</button>`};
+SC.s12=()=>`<h1>Connect Apple Health? (optional)</h1>
+<p>If you'd like, FitcoachAI can <b>read</b> some of your Apple Health data to understand your days better — like steps, sleep, and workouts. <b>We never write to Apple Health, and the data stays on your phone.</b></p>
+<p>You choose exactly what to share on the next screen, and you can change it any time in the Health app.</p>
+<button class="btn" onclick="hkConnect()">Connect Apple Health</button><button class="btn sec" id="next" onclick="P().healthKitChoice='notNow';next()">Not now</button>`;
+function hkConnect(){P().healthKitChoice='connect';P().healthKitRequestedAt=nowISO();logEv('healthkit_stub');toast("Stub: Apple Health isn't available on the web. All Health data is treated as unknown.");next()}
+const lbl=(a,v)=>((a.find(x=>String(x[0])===String(v))||[0,'—'])[1]).replace(/<[^>]+>/g,'').replace(/&#39;/g,"'");
+SC.s13=()=>{const p=P();computeSafety();
+ const areas=p.bodyAreas.length?p.bodyAreas.map(a=>`${REGIONS[a.region]} (${a.triggers.map(t=>lbl(TRIG,t).toLowerCase()).join(', ')})`).join(' · '):'Nothing right now';
+ const needs=p.movementNeeds.map(n=>lbl(NEEDS,n)).join(' · ');
+ return `<h1>Here's what we heard</h1><ul class="sum">
+<li><b>You:</b> ${lbl(AGES,p.ageRange)} · ${lbl(SEX,p.sexForReference)} <a onclick="editFrom('s3')">Edit</a></li>
+<li><b>Main goal:</b> ${lbl(GOALS,p.primaryGoal)} <a onclick="editFrom('s4')">Edit</a></li>
+<li><b>Experience:</b> ${EXPS[p.experience]||'—'} <a onclick="editFrom('s5')">Edit</a></li>
+<li><b>Careful with:</b> ${esc(areas)}${needs?' · '+esc(needs):''} <a onclick="editFrom('s6')">Edit</a></li>
+<li><b>Health check:</b> ${p.safetyModeReasons.some(r=>r!=='manyPainAreas')?'Some answers need care':'All "No"'} <a onclick="editFrom('s7')">Edit</a></li>
+<li><b>Your day:</b> ${lbl(JOBS,p.jobActivity)} · ${lbl(WORK,p.workPattern)} <a onclick="editFrom('s8')">Edit</a></li>
+<li><b>Space:</b> ${p.availableItems.length?p.availableItems.map(i=>lbl(ITEMS,i)).join(', '):'None listed'} · Quiet mode ${p.quietMode?'on':'off'} <a onclick="editFrom('s9')">Edit</a></li>
+<li><b>Your week:</b> ${p.days==='var'?'It changes a lot':(p.days==='6'?'6+':p.days)+' days'} · ${p.targetMinutes} minutes <a onclick="editFrom('s10')">Edit</a></li>
+<li><b>Coach:</b> ${p.coachingStyle==='calm'?'Calm':'Direct'} · Voice ${p.voiceCoaching?'on':'off'} · ${({fixedTime:'Around '+esc(p.nudgeTime),learned:"I'll learn your best time",off:'No nudges'})[p.nudgeMode]} <a onclick="editFrom('s11')">Edit</a></li>
+<li><b>Apple Health:</b> ${p.healthKitChoice==='connect'?'Requested (stub — read only)':'Not now'} <a onclick="editFrom('s12')">Edit</a></li></ul>
+${gentleMode()?`<div class="card">🟡 <b>Gentle mode is on.</b>${safe('DOC')}</div>`:''}
+${safe('REF')}<button class="btn" id="next" onclick="next()">Looks right</button>`};
+SC.s14=()=>{const sel=selectTests(),n=sel.tests.length,mins=Math.max(4,Math.round(sel.tests.reduce((t,x)=>t+x.cap+75,0)/60));
+ return `<h1>Let's see where you're starting</h1>
+<p>Next is a short check-in workout: <b>${n} quick tests</b>, about <b>${mins} minutes</b>. It's not a fitness exam — it just helps me pick the right level for you.</p>
+${sel.skipped.length?`<div class="card">${sel.skipped.map(s=>`<p class="sm">⏭ ${PSHORT[s.pattern]}: skipped ${esc(s.why)}</p>`).join('')}</div>`:''}
+${n<4?`<p class="sm mut">Fewer than 4 tests fit your answers today. That's okay — we'll learn more in your first sessions.</p>`:''}
+<h2>How it works</h2><ul><li>I'll explain each test, then you go.</li><li>Say <b>"done"</b> when you finish — or tap the big <b>Done</b> button.</li><li>You'll rest <b>10–15 seconds</b> between tests.</li><li>After each one, I'll ask how it felt and how many you did.</li><li>Say <b>"stop"</b> or tap <b>Stop</b> any time. <b>Stop right away if anything hurts.</b></li></ul>
+${safe('STOP')}
+<p class="sm mut">So you can say "done" and "stop" hands-free, your browser may ask for the microphone. ${SR?'Speech recognition is available in this browser (note: browsers may process speech on a server — unlike the on-device iPhone app).':'Speech recognition isn\'t available in this browser — you\'ll use the buttons.'} ${'speechSynthesis' in window?'':'Spoken cues aren\'t available; captions are shown instead.'}</p>
+<button class="btn" id="startCheck" ${n?'':'disabled'} onclick="startBaseline()">Start check-in</button><button class="btn sec" id="later" onclick="doLater()">Do it later</button>`};
+/* ===== Baseline tests (4–6, filtered by body map, gentle mode, movement needs) ===== */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+function variantFor(pat){const p=P(),n=p.movementNeeds,R=p.patternReadiness[pat]||{level:'notAssessed'};
+ const seated=n.includes('seated'),cons=gentleMode(),gentle=cons||R.level==='gentle'||p.experience==='new',active=p.experience==='regular'&&!gentle;
+ const noFloor=n.includes('floorHard')||!p.availableItems.includes('floor'),pp=p.postpartumMode,noChair=!p.availableItems.includes('chair')&&!seated,sup=n.includes('balance')||n.includes('oneSide');
+ const T=(o)=>Object.assign({pattern:pat,gentle:true,lvl:0},o);
+ switch(pat){
+ case 'squat':return seated?T({id:'seatedReach',name:'Seated forward reach-and-return',how:'Sit tall. Reach forward toward your knees, then sit back up tall. Repeat at a steady pace. As many as feel comfortable in 30 seconds.',measure:'reps',cap:30})
+  :T({id:gentle?'sitToStandSupported':'sitToStand',name:gentle?'Sit-to-stand (hands on thighs)':'Sit-to-stand from a chair',how:(noChair?'No chair listed — use a sturdy, stable seat like a sofa or bed edge. ':'')+`Sit near the front of a sturdy chair. Stand up all the way, then sit back down with control${gentle?'. Use your hands on your thighs to help, and only go as low as is comfortable':''}${sup?'. Keep a hand near a wall or table':''}. As many as feel comfortable in 30 seconds — stop at 15.`,measure:'reps',cap:30,gentle,lvl:gentle?0:1});
+ case 'push':return seated?T({id:'seatedWallPress',name:'Seated chest press against a wall',how:'Sit facing a wall, close enough to reach it. Bend your elbows to lean toward the wall, then press back to upright. As many as feel comfortable in 30 seconds.',measure:'reps',cap:30})
+  :active?T({id:'counterPushUp',name:'Counter push-ups',how:'Hands on a sturdy counter, body in a straight line. Lower your chest toward the counter and push back. As many good ones as feel comfortable in 30 seconds.',measure:'reps',cap:30,gentle:false,lvl:1})
+  :T({id:'wallPushUp',name:'Wall push-ups',how:"Stand an arm's length from a wall, hands flat at shoulder height. Bend your elbows to bring your chest toward the wall, then push back. As many as feel comfortable in 30 seconds.",measure:'reps',cap:30});
+ case 'hinge':return seated?T({id:'seatedLean',name:'Seated forward lean & return',how:'Sit tall, hands on your thighs. Lean forward from your hips with a long back, then come back up. Repeat slowly for 30 seconds.',measure:'reps',cap:30})
+  :(noFloor||gentle)?T({id:'wallHinge',name:'Standing hip hinge to a wall',how:'Stand with your back to a wall, a small step away. Push your hips back to touch the wall with soft knees and a long back, then stand tall. Repeat slowly for 30 seconds.',measure:'reps',cap:30})
+  :T({id:'gluteBridge',name:'Glute bridge',how:"Lie on your back, knees bent, feet flat. Squeeze your seat and lift your hips, then lower slowly. Breathe out as you lift — don't hold your breath. As many as feel comfortable in 30 seconds.",measure:'reps',cap:30,gentle:false,lvl:1});
+ case 'core':return pp?T({id:'breathHeelSlide',name:'Breathing + heel slides',how:"Lie on your back, or sit tall if that's easier. Breathe out gently as you slide one heel away, breathe in as it comes back. Alternate for 30 seconds. No breath-holding.",measure:'reps',cap:30})
+  :seated?T({id:'seatedBrace',name:'Seated brace & breathe',how:'Sit tall. Gently tighten your belly as if bracing for a cough, and keep breathing. Hold as long as is comfortable.',measure:'hold',cap:gentle?20:30})
+  :(active&&!noFloor)?T({id:'floorPlank',name:'Forearm plank (floor)',how:'Forearms on the floor, knees or toes down, body in a straight line. Keep breathing. Hold as long as you comfortably can, up to 30 seconds.',measure:'hold',cap:30,gentle:false,lvl:2})
+  :T({id:'wallPlank',name:'Forearm wall plank',how:"Forearms on a wall, step your feet back so your body leans in a straight line. Keep breathing — don't hold your breath. Hold as long as is comfortable.",measure:'hold',cap:gentle?20:30,lvl:1});
+ case 'balance':return seated?T({id:'seatedReachBal',name:'Seated reach',how:'Sit tall without leaning on the backrest. Reach one arm forward and to the side, then the other. Keep going while you feel steady, up to 20 seconds.',measure:'hold',cap:20})
+  :(sup||gentle||['r60_69','r70plus'].includes(p.ageRange))?T({id:'feetTogether',name:'Feet-together stand (hand near support)',how:"Stand with a hand on or near a wall or chair. Bring your feet together and stand tall. Hold as long as you're steady, up to 20 seconds. Hold on any time.",measure:'hold',cap:20})
+  :T({id:'singleLeg',name:'Supported single-leg stand',how:'Stand with a hand near a wall or chair. Lift one foot a little and balance, then switch sides. Say done when you finish. Tell me the shorter side.',measure:'hold',cap:20,gentle:false,lvl:1});
+ case 'cardio':return seated?T({id:'seatedArmMarch',name:'Seated arm march',how:"Sit tall and pump your arms like you're marching. Keep a pace where you could still talk.",measure:'talk',cap:cons?60:120})
+  :T({id:'march',name:`${cons?'1':'2'}-minute march in place`,how:`March in place at a comfortable pace${p.quietMode?' — soft steps, no stomping':''}.${sup?' Keep a hand near a wall or chair.':''} At the end I'll ask if you can say a full sentence.`,measure:'talk',cap:cons?60:120,gentle:cons,lvl:cons?0:1});
+ }}
+function selectTests(){computeReadiness();const R=P().patternReadiness,tests=[],skipped=[];
+ PATTERNS.forEach(pat=>{if(R[pat].level==='notReady')skipped.push({pattern:pat,why:R[pat].why[0]||'to keep you safe'});else tests.push(variantFor(pat))});
+ return{tests:tests.slice(0,6),skipped}}
+
+/* ===== Voice: speechSynthesis out, Web Speech API in (with button fallback) ===== */
+let B=null,rec=null,recWanted=false,recHandler=null,voiceOK=!!SR,timerI=null;
+function speak(t,cb){showCap(t);if(!P().voiceCoaching||!('speechSynthesis' in window)){if(cb)setTimeout(cb,300);return}
+ try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=navigator.language||'en-US';let done=false;const f=()=>{if(!done){done=true;cb&&cb()}};u.onend=f;u.onerror=f;setTimeout(f,Math.min(15000,800+t.length*75));speechSynthesis.speak(u)}catch(e){cb&&cb()}}
+function showCap(t){const c=document.getElementById('cap');c.innerHTML=`<b>Coach:</b> ${esc(t)}`;c.style.display='block'}
+function listen(handler){recHandler=handler;if(!voiceOK||!SR)return;recWanted=true;if(rec)return;
+ try{rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang=navigator.language||'en-US';
+  rec.onresult=e=>{let txt='';for(let i=e.resultIndex;i<e.results.length;i++)txt+=' '+e.results[i][0].transcript;txt=txt.toLowerCase().trim();if(!txt||!recHandler)return;const m=document.getElementById('heard');if(m)m.textContent='Heard: "'+txt+'"';recHandler(txt)};
+  rec.onerror=e=>{if(['not-allowed','service-not-allowed','audio-capture'].includes(e.error)){voiceOK=false;P().micAuthorized=false;P().speechAuthorized=false;save();toast('Voice control is off — use the buttons.');logEv('speech_unavailable',{error:e.error});rec=null;if(B)render()}};
+  rec.onend=()=>{rec=null;if(recWanted&&voiceOK)setTimeout(()=>{if(recWanted&&!rec&&recHandler)listen(recHandler)},250)};
+  rec.start();P().speechAuthorized=true}catch(e){voiceOK=false;rec=null}}
+function unlisten(){recWanted=false;recHandler=null;if(rec){try{rec.abort()}catch(e){}rec=null}}
+function stopAllMedia(){unlisten();clearInterval(timerI);timerI=null;try{speechSynthesis.cancel()}catch(e){}document.getElementById('cap').style.display='none'}
+const WORDNUM={zero:0,one:1,two:2,to:2,too:2,three:3,four:4,for:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60};
+function parseNum(t){const m=t.match(/\d+/);if(m)return +m[0];let v=null;t.split(/[\s-]+/).forEach(w=>{if(w in WORDNUM){const n=WORDNUM[w];v=(v!=null&&v>=20&&n<10)?v+n:n}});return v}
+const has=(t,ws)=>ws.some(w=>new RegExp('\\b'+w+'\\b').test(t));
+
+/* ===== Baseline flow ===== */
+function startBaseline(){const sel=selectTests();P().baselineDeferred=false;
+ B={tests:sel.tests,skipped:sel.skipped,i:0,phase:'intro',results:[],t0:0,elapsed:0,paused:false,val:null,cur:{},stopped:false};
+ logEv('baseline_started',{tests:B.tests.map(t=>t.id),skipped:B.skipped,voiceAvailable:!!SR});S.screen='baseline';save();
+ if(gentleMode())speak(SAFE.STOP,()=>{if(B&&B.phase==='intro'&&B.i===0)introTest()});else introTest();render()}
+function introTest(){const t=B.tests[B.i];B.phase='intro';B.cur={pattern:t.pattern,testID:t.id,variant:t.gentle?'gentle':'standard',lvl:t.lvl,name:t.name};render();
+ const ask=P().movementNeeds.includes('ratherNot')?' Would you like to try this, or skip?':'';
+ speak(`Test ${B.i+1} of ${B.tests.length}: ${t.name}. ${t.how}${ask} Say go, or tap Start, when you're ready.`);
+ listen(txt=>{if(!B||B.phase!=='intro')return;if(has(txt,['stop']))stopBaseline('voice');else if(has(txt,['skip']))skipTest();else if(has(txt,['go','start','ready']))goTest('voice')})}
+function goTest(method){if(!B||B.phase!=='intro')return;const t=B.tests[B.i];B.phase='run';B.elapsed=0;B.paused=false;B._half=false;B.t0=performance.now();B.cur.startMethod=method;render();
+ speak('Ready? Go.');clearInterval(timerI);
+ timerI=setInterval(()=>{if(!B||B.paused||B.phase!=='run')return;const e=B.elapsed+(performance.now()-B.t0)/1000;const el=document.getElementById('tm');if(el)el.textContent=fmt(Math.max(0,t.cap-e));
+  if(t.measure==='talk'&&!B._half&&e>=t.cap/2){B._half=true;speak('Halfway. Keep a pace where you could still talk.')}
+  if(e>=t.cap)finishTest('auto')},200);
+ listen(txt=>{if(!B||B.phase!=='run')return;if(has(txt,['stop']))stopBaseline('voice');else if(has(txt,['done','finished','finish']))finishTest('voice');else if(has(txt,['pause']))pauseTest(true);else if(B.paused&&has(txt,['resume','continue','go']))pauseTest(false)})}
+const fmt=s=>{s=Math.ceil(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function pauseTest(on){if(!B||B.phase!=='run')return;if(on&&!B.paused){B.elapsed+=(performance.now()-B.t0)/1000;B.paused=true;speak('Paused. Say resume, or tap Resume.')}else if(!on&&B.paused){B.t0=performance.now();B.paused=false;speak('Resuming.')}else return;logEv('baseline_pause',{paused:on,test:B.cur.testID});render()}
+function finishTest(method){if(!B||B.phase!=='run')return;clearInterval(timerI);const t=B.tests[B.i];const dur=B.paused?B.elapsed:B.elapsed+(performance.now()-B.t0)/1000;
+ B.cur.durationSec=Math.round(Math.min(dur,t.cap)*10)/10;B.cur.inputMethod=method;
+ B.val=t.measure==='hold'?Math.round(B.cur.durationSec):null; // hold: pre-fill from timer; reps: pre-filled with nothing
+ B.phase='measure';render();
+ const q=t.measure==='reps'?'Nice. How many did you do?':t.measure==='hold'?`How many seconds did you hold? I timed about ${Math.round(B.cur.durationSec)}.`:'Can you say a full sentence right now?';
+ speak(q);listen(txt=>{if(!B||B.phase!=='measure')return;if(has(txt,['stop']))return stopBaseline('voice');
+  if(t.measure==='talk'){if(has(txt,['yes','yeah','yep']))setMeasure(true);else if(has(txt,['no','nope']))setMeasure(false);return}
+  if(/lost count|don't know|not sure/.test(txt))return setMeasure(null);const n=parseNum(txt);if(n!=null&&n<=200){B.val=n;setMeasure(n)}})}
+function stepVal(d){B.val=Math.max(0,(B.val==null?0:B.val)+d);const v=document.getElementById('sv');if(v)v.textContent=B.val}
+function setMeasure(v){const t=B.tests[B.i];if(t.measure==='reps')B.cur.reps=v;else if(t.measure==='hold')B.cur.holdSec=v;else B.cur.talkTest=v;
+ B.phase='effort';render();speak('How did that feel? Easy, okay, or hard?');
+ listen(txt=>{if(!B||B.phase!=='effort')return;if(has(txt,['stop']))return stopBaseline('voice');if(has(txt,['easy']))setEffort('easy');else if(has(txt,['okay','ok','fine','alright']))setEffort('okay');else if(has(txt,['hard','tough','difficult']))setEffort('hard')})}
+function setEffort(e){B.cur.effort=e;B.phase='pain';render();speak('Any pain? Yes or no.');
+ listen(txt=>{if(!B||B.phase!=='pain')return;if(has(txt,['no','nope','none']))setPain(false);else if(has(txt,['yes','yeah','some']))setPain(true)})}
+function setPain(y){B.cur.pain=y;if(!y)return commitTest(false);B.phase='painWhere';unlisten();render();speak("Okay. We'll stop this movement for today. Where do you feel it?")}
+function setPainRegion(r){B.cur.painRegion=r;B.phase='painSharp';render();speak('Is the pain sharp, or is it not settling?')}
+function setPainSharp(sharp){B.cur.painSharp=sharp;const r=B.cur.painRegion,p=P(),ts=nowISO();let a=p.bodyAreas.find(x=>x.region===r);
+ if(!a){a={region:r,status:'current',triggers:['notSure'],painScore:null,reportedAt:ts,history:[]};p.bodyAreas.push(a)}
+ a.status='current';a.updatedAt=ts;a.history=(a.history||[]).concat({at:ts,event:'pain during baseline',test:B.cur.testID,sharp});logEv('pain_reported',{region:r,test:B.cur.testID,sharp});
+ commitTest(sharp)}
+function commitTest(stopAfter){const r=Object.assign({},B.cur,{completedAt:nowISO()});B.results.push(r);logEv('baseline_result',r);unlisten();save();
+ if(stopAfter){B.phase='painStop';B.stopped=true;render();speak(SAFE.PAIN);return}
+ if(r.pain){B.phase='painNote';render();speak(SAFE.PAIN);return}
+ restOrEnd()}
+function restOrEnd(){if(!B)return;if(B.i>=B.tests.length-1)return endBaseline();B.phase='rest';const secs=gentleMode()?15:12;B.rest=secs;render();
+ speak(`Rest for ${secs} seconds. Next up: ${B.tests[B.i+1].name}.`);clearInterval(timerI);
+ timerI=setInterval(()=>{if(!B||B.phase!=='rest')return clearInterval(timerI);B.rest--;const el=document.getElementById('rt');if(el)el.textContent=B.rest;if(B.rest===3)speak('3, 2, 1.');if(B.rest<=0){clearInterval(timerI);nextTest()}},1000);
+ listen(txt=>{if(!B||B.phase!=='rest')return;if(has(txt,['stop']))stopBaseline('voice');else if(!gentleMode()&&has(txt,['skip']))nextTest()})}
+function nextTest(){clearInterval(timerI);if(!B||B.phase!=='rest')return;B.i++;introTest()}
+function skipTest(){if(!B)return;const r=Object.assign({},B.cur,{skippedByUser:true,completedAt:nowISO()});B.results.push(r);logEv('baseline_test_skipped',{test:B.cur.testID});unlisten();if(B.i>=B.tests.length-1)return endBaseline();B.i++;introTest()}
+function stopBaseline(method){if(!B)return;clearInterval(timerI);unlisten();logEv('baseline_stopped',{method,test:B.cur.testID});B.stopped=true;B.phase='stopped';try{speechSynthesis.cancel()}catch(e){}render();speak('Stopping now. '+SAFE.STOP)}
+function endBaseline(){clearInterval(timerI);unlisten();const p=P();p.baselineResults=B.results;p.baselineStopped=B.stopped;p.baselineCompletedAt=nowISO();
+ p.patternReadiness=scoreResults(B.results);p.plan=buildPlan();logEv('baseline_completed',{results:B.results.length,stopped:B.stopped,readiness:Object.fromEntries(PATTERNS.map(x=>[x,p.patternReadiness[x].level]))});
+ B=null;S.hist=[];speak("All done. Here's what we saw.");go('results',false)}
+function doLater(){const p=P();p.baselineDeferred=true;p.baselineResults=[];p.baselineStopped=false;computeReadiness();p.plan=buildPlan();logEv('baseline_deferred');S.hist=[];go('results',false)}
+
+/* ===== Deterministic scoring per movement pattern ===== */
+// Rough "good count" thresholds — only used to decide a one-step-up and to word feedback; never a grade.
+function goodThreshold(pat){const p=P();let v={squat:12,push:15,hinge:15,core:25,balance:15}[pat]||99;if(['r60_69','r70plus'].includes(p.ageRange))v=Math.round(v*0.8);if(p.sexForReference==='female'&&pat==='push')v-=3;return v}
+function scoreResults(results){computeReadiness();const R=JSON.parse(JSON.stringify(P().patternReadiness)),g=gentleMode();
+ results.forEach(r=>{const pat=r.pattern,prior=R[pat];let lvl,step=false,note;
+  if(r.skippedByUser){R[pat]=Object.assign(prior,{level:prior.level==='notReady'?'notReady':'notAssessed',note:"You skipped this one — that's fine. It stays \"not assessed\" and starts at the easiest version.",result:r});return}
+  const val=r.reps!=null?r.reps:r.holdSec,unit=r.reps!=null?'reps':'seconds';
+  if(r.pain){lvl='notReady';note=`You felt pain${r.painRegion?' in your '+REGIONS[r.painRegion]:''}, so this movement is out of your plan for now. It comes back step by step only after 3 pain-free sessions over at least 7 days per step.`}
+  else if(!r.effort){lvl='gentle';note="We didn't get an effort rating, so we'll start gently."}
+  else if(r.effort==='hard'){lvl='gentle';note="This felt hard, so we'll start with the easiest version and build slowly."}
+  else if(pat==='cardio'){if(r.talkTest===false){lvl='gentle';note="Talking was hard, so we'll keep the pace easier for now."}else{lvl=r.effort==='easy'&&!g?'ready':'gentle';step=r.effort==='easy'&&r.talkTest===true&&!g;note=r.talkTest==null?'We\'ll keep the pace comfortable.':r.effort==='easy'?'This felt easy and you could talk.'+(step?' Your plan starts one step up.':''):'This felt okay and you could still talk. Good place to start.'}}
+  else if(r.effort==='okay'){lvl=(g||r.variant==='gentle')?'gentle':'ready';note=`This felt okay${val!=null?` (${val} ${unit})`:''}. We'll start at the version you just did.`}
+  else{lvl='ready';
+   if(val==null)note="This felt easy. Without a count, we'll start at the version you did — no step up on a guess.";
+   else if(val>=goodThreshold(pat)&&!g){step=true;note=`This felt easy with ${val} ${unit}. Your plan starts one step up.`}
+   else note=`This felt easy (${val} ${unit}). We'll start here and add reps before making it harder.`}
+  if(r.inputMethod==='auto'&&pat!=='cardio'&&!r.pain&&r.effort!=='easy')note+=' You went the full time — nice and steady.';
+  if(prior.level==='notReady')lvl='notReady';
+  if(prior.level==='gentle'&&lvl==='ready'){lvl='gentle';step=false;note+=" Because of what you told us earlier, we'll still keep it gentle for now."}
+  if(g&&lvl==='ready')lvl='gentle';
+  R[pat]={level:lvl,why:prior.why,stepUp:step,note,result:r}});
+ return R}
+function sawLine(pat,R){const r=R.result;
+ if(!r){if(R.level==='notReady')return `Skipped ${esc(R.why[0]||'to keep you safe')}.`;return P().baselineDeferred?'Not assessed yet — your plan uses the easiest version until we check in.':"Not tested today. We treat that as unknown and start with the easiest version."}
+ if(r.skippedByUser)return esc(R.note);
+ const what=r.reps!=null?`${r.reps} in ${Math.round(r.durationSec)} seconds`:r.holdSec!=null?`held about ${r.holdSec} seconds`:r.talkTest!=null?`${Math.round(r.durationSec)} seconds; ${r.talkTest?'you could say a full sentence':'talking was hard'}`:`${Math.round(r.durationSec||0)} seconds (no count given)`;
+ return `${esc(r.name)}: ${what}, felt <b>${r.effort||'—'}</b>${r.pain?', with pain':''}. ${esc(R.note||'')}`}
+
+/* ===== 2-week starter plan ===== */
+const LADDER={squat:['Sit-to-stand, hands on thighs','Sit-to-stand from a chair','Slow sit-to-stand (3 seconds down)','Body-weight squat to a chair'],
+ push:['Wall push-up','Counter push-up','Knee push-up','Floor push-up'],
+ hinge:['Standing hip hinge to a wall','Glute bridge','Glute bridge with 2-second hold','Single-leg glute bridge'],
+ core:['Breathing + heel slides','Forearm wall plank','Forearm plank on knees','Forearm plank'],
+ balance:['Feet-together stand (hand on support)','Supported single-leg stand','Single-leg stand, fingertip support','Single-leg stand with a reach'],
+ cardio:['Easy march in place','March in place','Brisk march with arm swings','Step-backs + march']};
+const SEATED={squat:'Seated forward reach-and-return',push:'Seated chest press against a wall',hinge:'Seated forward lean & return',core:'Seated brace & breathe',balance:'Seated reach',cardio:'Seated arm march'};
+function exFor(pat){const p=P(),R=p.patternReadiness[pat]||{level:'notAssessed'};if(R.level==='notReady')return null;
+ if(p.movementNeeds.includes('seated'))return SEATED[pat];
+ let i=0;const r=R.result;if(r&&!r.skippedByUser&&R.level!=='notAssessed'){i=r.lvl||0;if(R.stepUp)i++;if(R.level==='gentle')i=Math.min(i,r.lvl||0)}
+ if(pat==='core'&&!p.postpartumMode)i=Math.max(i,1); // heel slides are the postpartum start
+ if(p.postpartumMode&&pat==='core')i=0;
+ if(gentleMode()||pat==='balance'&&(p.movementNeeds.includes('balance')||isYes(p.hs.h4)))i=Math.min(i,pat==='core'?1:1);
+ let ex=LADDER[pat][Math.min(i,3)];
+ const noFloor=p.movementNeeds.includes('floorHard')||!p.availableItems.includes('floor');
+ if(noFloor&&pat==='hinge')ex=LADDER.hinge[0];if(noFloor&&pat==='core'&&i>=2)ex=LADDER.core[1];if(noFloor&&pat==='core'&&i===0&&p.postpartumMode)ex='Seated breathing + gentle belly brace';
+ if((p.quietMode||gentleMode()||p.postpartumMode)&&ex==='Step-backs + march')ex=LADDER.cardio[2];
+ return ex}
+function buildPlan(){const p=P(),g=gentleMode();const d=p.days==='var'?3:p.days==='6'?6:+p.days;
+ const DAYS={1:['Wed'],2:['Tue','Fri'],3:['Mon','Wed','Fri'],4:['Mon','Tue','Thu','Fri'],5:['Mon','Tue','Wed','Fri','Sat'],6:['Mon','Tue','Wed','Thu','Fri','Sat']}[d];
+ const m=p.targetMinutes,old=['r60_69','r70plus'].includes(p.ageRange);
+ let wu=m<=10?2:m<=20?3:5,cd=m<=10?1:2;if(g){wu=Math.max(wu,5);cd=Math.max(cd,3)}if(old)wu+=1;if(p.primaryGoal==='lessStiffness')wu+=1;const main=Math.max(2,m-wu-cd);
+ const strength=['squat','push','hinge','core'].filter(exFor),extra=['balance','cardio'].filter(exFor);
+ const why={energy:'short and mixed so you finish feeling better, not wiped out',strength:'the same core moves repeat so you can add reps week to week',lessStiffness:'a longer warm-up and comfortable range first',habit:'short enough to do on a busy day — showing up counts',postBaby:'gentle, breath-first work with no impact',returnFromInjury:'patient steps that work around the areas you flagged',weight:'regular movement you can keep doing — consistency, not promises'}[p.primaryGoal]||'built from your check-in';
+ const sets=g?'2 sets':'2–3 sets',range=g?'6–10':'8–12',hold=g?'10–20 s':'15–30 s';
+ const heavyJob=['onFeet','physical','veryHeavy'].includes(p.jobActivity);
+ const weeks=[1,2].map(w=>DAYS.map((day,i)=>{let type,list;
+   if(d>=5){type=['Strength','Light cardio + balance','Mobility & core'][i%3];list=type==='Strength'?strength.slice():type==='Light cardio + balance'?extra.slice():['core','hinge'].filter(exFor)}
+   else{type=d>=3?(i%2?'Full body — upper body & core focus':'Full body — legs & hips focus'):'Full body';list=strength.concat(extra.slice(0,m>=20?2:m>=15?1:0))}
+   if(p.keepExtraLight&&i>=3){type='Light / mobility day';list=extra.length?extra.slice():['core'].filter(exFor)}
+   if(!list.length)list=extra.length?extra.slice():[];
+   const ex=list.map(x=>({pattern:x,name:exFor(x),dose:x==='cardio'?`${g?'2–3':'3–5'} min at a pace where you can talk`:(x==='balance'||(x==='core'&&/plank|brace/i.test(exFor(x))))?`${sets} · hold ${hold}`:`${sets} · ${range} reps`}));
+   if(!ex.length)ex.push({pattern:'none',name:'Gentle walk or easy movement you enjoy',dose:'5–10 min, comfortable pace'});
+   let wl=`Why this workout: ${why}.`;if(heavyJob&&/legs|Strength/.test(type))wl+=" If it's a heavy work day, do the 10-minute version.";if(w===2)wl+=' Week 2: same moves — add a rep per set if last week felt easy or okay with no pain.';
+   return{day,type,warmup:wu,main,cooldown:cd,ex,why:wl}}));
+ return{daysPerWeek:d,variable:p.days==='var',minutes:m,weeks,builtAt:nowISO()}}
+SC.results=()=>{const p=P(),R=p.patternReadiness,pl=p.plan||buildPlan(),lab={ready:'Ready',gentle:'Gentle',notReady:'Not ready',notAssessed:'Not assessed',progressing:'Progressing'};
+ return `<h1>Here's what we saw</h1>
+${p.baselineDeferred?'<p class="mut">You chose to do the check-in later, so every movement starts at the easiest version.</p>':''}
+${p.baselineStopped?`<div class="card"><b>You stopped the check-in.</b> That's the right call whenever something feels off — nothing has "failed".${safe('STOP')}</div>`:''}
+<p class="mut sm">Notes from one short check-in, not a fitness grade. They only set where your plan starts. We don't predict body changes or weight.</p>
+${PATTERNS.map(x=>`<div class="card" data-pattern="${x}"><div style="display:flex;justify-content:space-between;gap:8px"><b>${PSHORT[x]}</b><span class="pill p-${R[x]?R[x].level:'notAssessed'}">${lab[R[x]?R[x].level:'notAssessed']}</span></div><p class="sm">${R[x]?sawLine(x,R[x]):''}</p></div>`).join('')}
+${p.bodyAreas.some(a=>(a.history||[]).some(h=>h.event==='pain during baseline'))?safe('PAIN'):''}
+<h1 style="margin-top:28px">Your 2-week starter plan</h1>
+<p class="sm mut">${pl.variable?'Your week changes a lot, so aim for <b>2–4 sessions</b>; the days below are a guide.':`${pl.daysPerWeek} day${pl.daysPerWeek>1?'s':''} a week`} · ${pl.minutes} minutes · body weight only${gentleMode()?' · 🟡 Gentle mode':''}</p>
+<div class="card"><b>How you'll progress (double progression)</b><p class="sm">Each move has a rep range. Keep the same version and add reps until you reach the top of the range on every set, with effort "easy" or "okay" and no pain, two sessions in a row. Then move to the next version and start again at the bottom of the range.${gentleMode()?' In gentle mode: at most one small step per movement per week.':''} Any pain → that movement steps back.</p></div>
+${pl.weeks.map((wk,wi)=>`<h2>Week ${wi+1}</h2>${wk.map(s=>`<div class="card"><b>${s.day} · ${s.type}</b><br><span class="mut sm">Warm-up ${s.warmup} min · main ${s.main} min · cool-down ${s.cooldown} min</span>
+<table>${s.ex.map(e=>`<tr><td>${esc(e.name)}</td><td class="mut">${e.dose}</td></tr>`).join('')}</table><p class="sm mut"><i>${esc(s.why)}</i></p><p class="sm mut">Short on time? 10-minute version: one set of each move.</p></div>`).join('')}`).join('')}
+<h2>Food habits (general)</h2><ul><li>Include some protein at each meal — for example eggs, beans, yogurt, fish, chicken, or tofu.</li><li>Drink water through the day, and a bit more on workout days.</li><li>Eat regular meals with vegetables, and try not to skip meals on workout days.</li></ul>
+${safe('FOOD')}<p class="sm"><b>Doctor note:</b> if you have a health condition or take medicine, check with your doctor before changing how you eat or exercise.</p>
+${gentleMode()?safe('DOC'):''}${safe('REF')}
+<button class="btn sec" id="viewLog" onclick="showLog()">View stored profile & event log</button>
+<button class="btn sec" onclick="S.hist=[];go('s14',false)">Redo check-in</button>`};
+function showLog(){openSheet(`<h2>Stored on this device (localStorage)</h2><p class="sm mut">Time zone: ${esc(TZ)}. Timestamps are UTC (ISO 8601).</p><h3>Event log</h3><pre style="white-space:pre-wrap;font-size:11px;max-height:40vh;overflow:auto">${esc(JSON.stringify(lsGet(KL),null,1))}</pre><h3>Profile</h3><pre style="white-space:pre-wrap;font-size:11px;max-height:30vh;overflow:auto">${esc(JSON.stringify(Object.assign({},P(),{profileSnapshot:'(omitted)'}),null,1))}</pre><button class="btn" onclick="closeSheet()">Close</button>`)}
+
+/* Baseline screen */
+SC.baseline=()=>{if(!B)return `<p>Check-in isn't running.</p><button class="btn" onclick="go('s14',false)">Back</button>`;const t=B.tests[B.i];
+ const mic=`<span class="mic ${voiceOK&&recWanted?'on':''}">${voiceOK&&SR?(recWanted?'🎙 Listening':'🎙 Voice ready'):'🎙 Voice off — use buttons'}</span> <span class="sm mut" id="heard"></span>`;
+ const stopB=`<button class="btn red" id="stopBtn" onclick="stopBaseline('button')">Stop</button>`,head=`<p class="mut sm">Test ${B.i+1} of ${B.tests.length} · ${PSHORT[t.pattern]}</p>`;
+ switch(B.phase){
+ case 'intro':return `${head}<h1>${esc(t.name)}</h1><div class="card">${esc(t.how)}</div><p class="sm mut">Up to ${t.cap} seconds.</p>${mic}
+  <button class="donebtn" id="startBtn" onclick="goTest('button')">Start</button><div class="row"><button class="btn sec" id="skipBtn" onclick="skipTest()">Skip this one</button>${stopB}</div>`;
+ case 'run':return `${head}<h1>${esc(t.name)}</h1><div class="big" id="tm">${fmt(t.cap-B.elapsed)}</div>${B.paused?'<p style="text-align:center"><b>Paused</b></p>':''}<p style="text-align:center">${mic}</p>
+  <button class="donebtn" id="doneBtn" onclick="finishTest('button')">Done</button><div class="row"><button class="btn sec" id="pauseBtn" onclick="pauseTest(${!B.paused})">${B.paused?'Resume':'Pause'}</button>${stopB}</div><p class="sm mut">Say "done", "pause", or "stop". Stop right away if anything hurts.</p>`;
+ case 'measure':if(t.measure==='talk')return `${head}<h1>Can you say a full sentence right now?</h1>${mic}<div class="row"><button class="btn" id="talkYes" onclick="setMeasure(true)">Yes</button><button class="btn sec" onclick="setMeasure(false)">Not really</button></div>`;
+  return `${head}<h1>${t.measure==='reps'?'How many did you do?':'How many seconds did you hold?'}</h1>${mic}
+  <div class="stepper"><button onclick="stepVal(-1)" aria-label="minus one">−</button><span class="v" id="sv">${B.val==null?'–':B.val}</span><button id="plus" onclick="stepVal(1)" aria-label="plus one">+</button></div>
+  <button class="btn" id="saveCount" onclick="setMeasure(B.val)">Save</button><button class="btn sec" onclick="setMeasure(null)">I lost count</button>`;
+ case 'effort':return `${head}<h1>How did that feel?</h1>${mic}<div class="list chips"><button class="chip" data-e="easy" onclick="setEffort('easy')">Easy</button><button class="chip" data-e="okay" onclick="setEffort('okay')">Okay</button><button class="chip" data-e="hard" onclick="setEffort('hard')">Hard</button></div>`;
+ case 'pain':return `${head}<h1>Any pain?</h1>${mic}<div class="row"><button class="btn" id="painNo" onclick="setPain(false)">No</button><button class="btn red" id="painYes" onclick="setPain(true)">Yes</button></div>`;
+ case 'painWhere':return `${head}<h1>Where do you feel it?</h1><p>We'll stop this movement for today.</p><div class="chips">${Object.keys(REGIONS).map(r=>`<button class="chip" data-r="${r}" onclick="setPainRegion('${r}')">${REGIONS[r]}</button>`).join('')}</div>${safe('PAIN')}`;
+ case 'painSharp':return `${head}<h1>Is the pain sharp, or is it not settling?</h1><div class="row"><button class="btn red" id="sharpYes" onclick="setPainSharp(true)">Yes</button><button class="btn sec" id="sharpNo" onclick="setPainSharp(false)">No, it's settling</button></div>`;
+ case 'painNote':return `${head}<h1>Okay — we've stopped that movement.</h1><p>${PSHORT[t.pattern]} is now <b>Not ready</b> and is out of your plan for now. It can come back only after 3 pain-free sessions over at least 7 days per step.</p>${safe('PAIN')}<button class="btn" id="contBtn" onclick="restOrEnd()">Continue check-in</button><button class="btn sec" onclick="endBaseline()">End check-in here</button>`;
+ case 'painStop':return `<h1>Let's stop the check-in here.</h1><p>Sharp pain, or pain that doesn't settle, is a reason to stop. Nothing has "failed".</p>${safe('PAIN')}${safe('STOP')}<button class="btn" id="seeResults" onclick="endBaseline()">See what we have so far</button>`;
+ case 'rest':return `<p class="mut sm">Rest</p><h1>Nice work. Rest.</h1><div class="big" id="rt">${B.rest}</div><p style="text-align:center">Next up: <b>${esc(B.tests[B.i+1].name)}</b></p>${mic}
+  ${gentleMode()?"<p class=\"sm mut\">Gentle mode: rest can't be skipped.</p>":'<button class="btn sec" id="skipRest" onclick="nextTest()">Skip rest</button>'}${stopB}`;
+ case 'stopped':return `<h1>Stopped.</h1><p>That's okay — nothing has "failed".</p>${safe('STOP')}<button class="btn" id="seeResults" onclick="endBaseline()">See what we have so far</button>`;
+ }return ''};
+
+/* ===== Render & boot ===== */
+function render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementById('app');el.innerHTML=SC[S.screen]();
+ const st=stepCount(),canBack=S.hist.length&&!['baseline','results'].includes(S.screen);
+ document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="9" aria-valuenow="${st}"><i style="width:${st/9*100}%"></i></div><span class="steptxt">Step ${st} of 9</span>`:'<span style="flex:1"></span>'}`;
+ if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
+if(S.screen==='baseline')S.screen='s14'; // timing state isn't resumable; restart the check-in
+logEv(lsGet(KL)?'app_open':'app_first_open',{resumeAt:S.screen,locale:navigator.language});
+render();
+</script>
+</body>
+</html>
