@@ -1,6 +1,6 @@
 # Research flags — values NOT decided
 
-All of these are placeholders. They live in `js/config.js` → `FC_CONFIG.RESEARCH_NEEDED` (R1–R26), or in the code where noted (X1–X7). They are marked "RESEARCH NEEDED / not decided". The values that are approved are in `FC_CONFIG.APPROVED`:
+All of these are placeholders. They live in `js/config.js` → `FC_CONFIG.RESEARCH_NEEDED` (R1–R26), or in the code where noted (X1–X8). They are marked "RESEARCH NEEDED / not decided". The values that are approved are in `FC_CONFIG.APPROVED`:
 - 1 step-up per session
 - a bad day never lowers the level
 - the injury gate: 3 pain-free sessions over at least 7 days
@@ -45,3 +45,4 @@ Changing a placeholder only means editing the config. The engine reads every thr
 | X5 | Step-up verification rule | "poor" = hard effort or any set below the bottom of the range → revert | Is one session enough to judge? | Coach review; pilot data |
 | X6 | Injury-flag heuristic when the plan starts | not-ready/gentle readiness from onboarding → injury gate | Mapping body areas to patterns needs clinical review | Physio review of REGION_LOAD / TRIG_MAP |
 | X7 | Reminder demo | 1/day (approved cap); the iOS web-push limits are explained | iOS needs Add to Home Screen (iOS 16.4+) for web push | Apple WebKit web-push documentation |
+| X8 | Look of the 3D coach | Quaternius CC0 mannequin (orange/purple, faceless, idle loop only) | Placeholder art: tone, inclusivity and body diversity not reviewed; no exercise demos yet | Design review; user testing with the target groups; decide on exercise demo clips for native |

@@ -1,4 +1,4 @@
-# FitcoachAI — Audit handoff (prototype v0.7.0)
+# FitcoachAI — Audit handoff (prototype v0.7.1)
 
 For: co-founder review and an AI-assisted audit (Claude). Date: October 27, 2026.
 
@@ -25,13 +25,14 @@ From `README.md` → Changelog and `git log`:
 
 | Version | Commit | What |
 |---|---|---|
-| v0.1 | `ffd63b7`, `eeacd31` | Onboarding, health check, body map, voice baseline, 2-week plan; 3D coach (three.js + Xbot) and muscle-map highlighter. |
+| v0.1 | `ffd63b7`, `eeacd31` | Onboarding, health check, body map, voice baseline, 2-week plan; 3D coach (three.js + a Mixamo-derived Xbot, replaced in v0.7.1) and muscle-map highlighter. |
 | v0.2 | `6122bfc` | App after onboarding: Today, session player, adaptive engine, calibration, decision log, reminders, simulated Apple Health, developer day simulation, research flags. |
 | v0.3 | (in `6122bfc`) | Integration review and polish; fixed a reload during Settings edits. |
 | v0.4 | `4b04f34`, `3d23fc5` | Simpler: onboarding cut from 40 to 33 taps, bottom tabs, one-tap start, plain "what changed and why", weekly goal, UX audit. |
 | v0.5 | `16f0e96` | Ready to try daily on iPhone: Stop button and spoken "stop" on every active screen; pause/resume after reload; installable offline PWA; iPhone fixes; backup restore; storage migration. |
 | v0.5.2 | `a86441e` | iPhone hotfix: crash guard for a stale cached config.js, `?v=` cache-busting, buttons kept clear of Safari's floating toolbar. |
 | v0.6.0 | `f814396` | Calibration phase: everyone starts at beginner level; data-driven "Getting to know you: X of 6 sessions" meter (no fixed day count); per-set timing; one-line reasons for ±1 changes; post-session check-in; Performance Score; plan built from calibration data; WebKit tests. |
+| v0.7.1 | (this release) | 3D coach swapped to a CC0 Quaternius mannequin (366 KB, was the 2.93 MB Mixamo-derived Xbot). Idle animation only, as before. |
 | v0.7.0 | `06a729f`, `cbfc3aa` | A "Hard" session or "Low" energy makes the next session lighter (same level, slightly lower target, can be declined). "Change something" (swap / skip / shorten with a reason, counter-offer first). "Why this workout" line. Root-cause fixes for two WebKit bugs; three.js vendored for offline use; lazy 3D; Lighthouse accessibility 95 → 100. Schema 4. |
 
 ## 3. How it was built
@@ -46,7 +47,7 @@ From `README.md` → Changelog and `git log`:
 - A vanilla JS PWA with no build step. Classic scripts share globals and load in this order: inline script in `index.html` (onboarding, health check, baseline, storage, migration) → `js/config.js` → `js/engine.js` → `js/app.js` → `js/v05.js` → `js/v06.js` → `js/v07.js`.
 - Later version files are **override layers**: they wrap or replace earlier functions and screens (`SC.<screen>`). `js/v07.js` runs the boot and the first full render. Some v0.6 overrides were folded back into the base files in v0.7.
 - `js/engine.js` is **pure**: no clock, no randomness, and no DOM (checked by `tests/inv.js`). It also loads in Node.
-- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.0`) that precaches the app, three.js and the 3D model.
+- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.1`) that precaches the app, three.js and the 3D model.
 
 ### File map
 | Path | Role |
@@ -59,7 +60,7 @@ From `README.md` → Changelog and `git log`:
 | `js/v06.js` | Calibration phase, set timing, post-session check-in, reason lines, Performance Score screen, plan-ready |
 | `js/v07.js` | Lighter next session, modification path, "Why this workout", migrated-user note, boot |
 | `sw.js`, `manifest.json`, `icons/` | PWA |
-| `assets/Xbot.glb` | 3D mannequin (Mixamo-derived, prototype only) |
+| `assets/coach-mannequin.glb` | 3D mannequin (Quaternius, CC0), idle loop only |
 | `vendor/three/`, `vendor/rich-body-highlighter/` | Vendored MIT libraries with their LICENSE files |
 | `tests/` | Playwright scripts (see below) |
 | `RESEARCH-FLAGS.md`, `UX-AUDIT.md`, `README.md`, `docs/` | Documentation |
@@ -100,6 +101,7 @@ On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (syn
 - **Day-to-day:** R10 check-in triage; R11 check-in pain effects; R13 short-sleep threshold; R14 default nudge time; R15 short-session offer; R16 weekly goal and streak; R17 one-tap start meaning; R18 onboarding defaults.
 - **Calibration and scoring:** R19 when calibration ends (R8 superseded); R20 beginner starting steps; R21 Performance Score formula (R9 superseded for display); R22 "finished fast" cue.
 - **v0.7:** R23 post-session effects including the lighter next session; R24 experience → tone only; R25 modification path; R26 days-per-week suggestion.
+- **v0.7.1:** X8 look of the 3D coach (placeholder art).
 - **Code heuristics:** X1 evidence tiers; X2 tolerance labels; X3 rest-day touchpoint; X4 measure-chip ranges; X5 step-up verification; X6 injury flag from onboarding; X7 reminder demo.
 
 ### 11 open questions in the onboarding spec (§7.1)
@@ -107,7 +109,6 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 
 ### Next steps
 - **Native SwiftUI app.** The prototype logic (engine, config, copy) is the reference to port. The web-specific parts (service worker, Safari workarounds, localStorage) do not carry over.
-- **Replace `assets/Xbot.glb`.** It is Mixamo-derived (Adobe) and allowed only for prototyping; it needs a CC0 or properly licensed model before any production use.
 - **Real-iPhone testing.** All automated testing so far is Playwright Chromium and WebKit; nothing is verified on a physical iPhone. Check voice, audio unlock, wake lock, Home Screen storage, the offline update flow and 3D performance.
 - **Expert review** of placeholders and safety: coach / sports science, physio (including pelvic floor), clinical and legal.
 
@@ -136,7 +137,7 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 10. No outcome or timeline promises; plain language (grade 6–8, no jargon); "placeholder" labels visible; food guidance general only.
 
 **P2 — Licenses**
-11. three.js (MIT), rich-body-highlighter (MIT) and Xbot.glb (Mixamo, prototype only, must be replaced). Check that no other assets lack a license.
+11. three.js (MIT), rich-body-highlighter (MIT) and coach-mannequin.glb (Quaternius, CC0, see README credits). Check that no other assets lack a license.
 
 **P2 — Accessibility**
 12. Tap targets of at least 44 px, contrast, labels and roles on chip groups, screen-reader flow. Lighthouse accessibility is 100 at v0.7.0.
@@ -151,7 +152,7 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 - Lighter sessions do not count towards finishing calibration, so it can take slightly longer (R23).
 - Pain during a modification puts the movement on hold. That is consistent with the check-in pain rule, but it has had no clinical review.
 - Lighthouse performance is about 71 because the 3D coach dominates blocking time in headless Chrome. Real iPhone performance is unmeasured.
-- Every threshold in R1–R26 and X1–X7 is a placeholder without expert validation.
+- Every threshold in R1–R26 and X1–X8 is a placeholder without expert validation.
 - Override layering (`v05` → `v07`) makes the call order non-obvious. It is a refactor candidate before porting.
 
 ## 6. Prompt for Claude (paste as is)

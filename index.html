@@ -81,7 +81,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.7.0"></script>
+<script src="js/config.js?v=0.7.1"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -117,7 +117,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.7.0';
+const SCHEMA=4,APPVER='0.7.1';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -598,11 +598,11 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="${st}"><i style="width:${st/8*100}%"></i></div><span class="steptxt">Step ${st} of 8</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.7.0"></script>
-<script src="js/app.js?v=0.7.0"></script>
-<script src="js/v05.js?v=0.7.0"></script>
-<script src="js/v06.js?v=0.7.0"></script>
-<script src="js/v07.js?v=0.7.0"></script>
+<script src="js/engine.js?v=0.7.1"></script>
+<script src="js/app.js?v=0.7.1"></script>
+<script src="js/v05.js?v=0.7.1"></script>
+<script src="js/v06.js?v=0.7.1"></script>
+<script src="js/v07.js?v=0.7.1"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
@@ -614,7 +614,7 @@ async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(
   const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio,1.5));r.setSize(w,h);r.setClearColor(0x000000,0);r.outputColorSpace=THREE.SRGBColorSpace;
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,w/h,0.1,50);cam.position.set(0,1.2,3.6);
   sc.add(new THREE.HemisphereLight(0xdde8ff,0x223344,2.2));const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(2,4,3);sc.add(d);
-  const gltf=await new GLTFLoader().loadAsync('assets/Xbot.glb');if(!el.isConnected){r.dispose();return}
+  const gltf=await new GLTFLoader().loadAsync('assets/coach-mannequin.glb');if(!el.isConnected){r.dispose();return}
   const m=gltf.scene;sc.add(m);const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip)mix.clipAction(clip).play();
   const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,0.95,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.2;oc.enableDamping=true;oc.update();
   el.innerHTML='';el.appendChild(r.domElement);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
