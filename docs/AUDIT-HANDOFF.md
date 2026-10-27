@@ -1,4 +1,4 @@
-# FitcoachAI — Audit handoff (prototype v0.7.1)
+# FitcoachAI — Audit handoff (prototype v0.7.2)
 
 For: co-founder review and an AI-assisted audit (Claude). Date: October 27, 2026.
 
@@ -32,7 +32,8 @@ From `README.md` → Changelog and `git log`:
 | v0.5 | `16f0e96` | Ready to try daily on iPhone: Stop button and spoken "stop" on every active screen; pause/resume after reload; installable offline PWA; iPhone fixes; backup restore; storage migration. |
 | v0.5.2 | `a86441e` | iPhone hotfix: crash guard for a stale cached config.js, `?v=` cache-busting, buttons kept clear of Safari's floating toolbar. |
 | v0.6.0 | `f814396` | Calibration phase: everyone starts at beginner level; data-driven "Getting to know you: X of 6 sessions" meter (no fixed day count); per-set timing; one-line reasons for ±1 changes; post-session check-in; Performance Score; plan built from calibration data; WebKit tests. |
-| v0.7.1 | (this release) | 3D coach swapped to a CC0 Quaternius mannequin (366 KB, was the 2.93 MB Mixamo-derived Xbot). Idle animation only, as before. |
+| v0.7.1 | `7fcb5b5` | 3D coach swapped to a CC0 Quaternius mannequin (366 KB, was the 2.93 MB Mixamo-derived Xbot). Idle animation only, as before. |
+| v0.7.2 | (this release) | Polish: coach auto-framing, runtime palette tint, ground shadow, loading placeholder, fade-in, failure fallback, reduced motion; caption bar no longer hides Stop on iPhone SE; small layout fixes. Lighthouse numbers in UX-AUDIT.md. |
 | v0.7.0 | `06a729f`, `cbfc3aa` | A "Hard" session or "Low" energy makes the next session lighter (same level, slightly lower target, can be declined). "Change something" (swap / skip / shorten with a reason, counter-offer first). "Why this workout" line. Root-cause fixes for two WebKit bugs; three.js vendored for offline use; lazy 3D; Lighthouse accessibility 95 → 100. Schema 4. |
 
 ## 3. How it was built
@@ -47,7 +48,7 @@ From `README.md` → Changelog and `git log`:
 - A vanilla JS PWA with no build step. Classic scripts share globals and load in this order: inline script in `index.html` (onboarding, health check, baseline, storage, migration) → `js/config.js` → `js/engine.js` → `js/app.js` → `js/v05.js` → `js/v06.js` → `js/v07.js`.
 - Later version files are **override layers**: they wrap or replace earlier functions and screens (`SC.<screen>`). `js/v07.js` runs the boot and the first full render. Some v0.6 overrides were folded back into the base files in v0.7.
 - `js/engine.js` is **pure**: no clock, no randomness, and no DOM (checked by `tests/inv.js`). It also loads in Node.
-- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.1`) that precaches the app, three.js and the 3D model.
+- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.2`) that precaches the app, three.js and the 3D model.
 
 ### File map
 | Path | Role |
@@ -89,7 +90,7 @@ export NODE_PATH=$(npm root -g)
 node tests/v07.js http://localhost:8765/
 BROWSER=webkit node tests/v07.js http://localhost:8765/   # WebKit; WEBKIT_PATH overrides the binary (tests/launch.js)
 ```
-Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4). At v0.7.0 all passed on Chromium and WebKit: v07 28, v06 29, v05 32, ui 32, test 28, inv 18, audit 34 taps / 15 screens.
+Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4), `v072.js` (3D coach reduced motion / fit / fallback, caption bar vs Stop). At v0.7.2 all 8 suites passed on Chromium and WebKit. At v0.7.0 all passed on Chromium and WebKit: v07 28, v06 29, v05 32, ui 32, test 28, inv 18, audit 34 taps / 15 screens.
 
 ### Developer tools (`?dev=1`)
 On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (synthetic workouts), **Auto-play 6 sessions** (clean or messy calibration), **Real date**, and **Fast timers**. Tap the version line in Settings for more. Simulated data is tagged in the log.
@@ -101,7 +102,7 @@ On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (syn
 - **Day-to-day:** R10 check-in triage; R11 check-in pain effects; R13 short-sleep threshold; R14 default nudge time; R15 short-session offer; R16 weekly goal and streak; R17 one-tap start meaning; R18 onboarding defaults.
 - **Calibration and scoring:** R19 when calibration ends (R8 superseded); R20 beginner starting steps; R21 Performance Score formula (R9 superseded for display); R22 "finished fast" cue.
 - **v0.7:** R23 post-session effects including the lighter next session; R24 experience → tone only; R25 modification path; R26 days-per-week suggestion.
-- **v0.7.1:** X8 look of the 3D coach (placeholder art).
+- **v0.7.1:** X8 look of the 3D coach (placeholder art). In v0.7.2 it is tinted to the app palette at runtime only; the CC0 file is unchanged.
 - **Code heuristics:** X1 evidence tiers; X2 tolerance labels; X3 rest-day touchpoint; X4 measure-chip ranges; X5 step-up verification; X6 injury flag from onboarding; X7 reminder demo.
 
 ### 11 open questions in the onboarding spec (§7.1)

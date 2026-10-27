@@ -95,3 +95,5 @@ if(E()){calState();if(P().pendingPost&&S.screen!=='postCheck'){S.screen='postChe
 if(S.screen==='postCheck'&&!P().pendingPost)S.screen=E()?'today':'s1';
 if(S.screen==='modify'&&!S.mod)S.screen=E()?'today':'s1';
 render();
+/* v0.7.2: the spoken-caption bar never covers Stop/Skip: #app gets bottom space equal to the bar's height */
+(function(){const c=document.getElementById('cap');if(!c||!('ResizeObserver' in window))return;new ResizeObserver(()=>{document.documentElement.style.setProperty('--caph',(c.offsetHeight||0)+'px')}).observe(c)})();

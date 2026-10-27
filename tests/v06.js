@@ -64,9 +64,9 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
  check(jump<=1,'level never changes by more than 1 between sessions (max '+jump+')');
  check(await pg.evaluate(()=>P().sessions.every(s=>s.score&&s.score.formula==='R21-placeholder')),'every session has a Performance Score');
  // --- version
- await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.7.1'),'settings version line v0.7.1');
+ await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.7.2'),'settings version line v0.7.2');
  const html=await (await pg.request.get(BASE+'index.html')).text(),sw=await (await pg.request.get(BASE+'sw.js')).text();
- check(!html.includes('v=0.5')&&!html.includes('v=0.6')&&html.includes('js/v07.js?v=0.7.1')&&sw.includes("fcai-v0.7.1")&&sw.includes('js/v07.js'),'?v=0.7.1 everywhere + SW cache fcai-v0.7.1');
+ check(!html.includes('v=0.5')&&!html.includes('v=0.6')&&html.includes('js/v07.js?v=0.7.2')&&sw.includes("fcai-v0.7.2")&&sw.includes('js/v07.js'),'?v=0.7.2 everywhere + SW cache fcai-v0.7.2');
  // --- migration from v0.5 (schema 2) keeps data
  const old=await pg.evaluate(()=>{const o=JSON.parse(localStorage.getItem(KP));o.schemaVersion=2;delete o.p.calib;const n=o.p.sessions.length;localStorage.setItem(KP,JSON.stringify(o));return n});
  await pg.reload();await pg.waitForTimeout(400);

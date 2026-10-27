@@ -65,10 +65,16 @@ table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 4px;bord
 select,input[type=month],input[type=time]{background:var(--card2);color:var(--tx);border:1.5px solid var(--line);border-radius:10px;padding:10px;font-size:16px;min-height:44px}
 input[type=range]{width:100%;accent-color:var(--acc)}
 @media (prefers-reduced-motion:no-preference){.prog i{transition:width .3s}}
-.fx3d{width:100%;height:220px;border-radius:16px;background:radial-gradient(circle at 50% 40%,#1e2a3a,#0b0f14);position:relative;overflow:hidden;margin:8px 0 14px;touch-action:none}
+.fx3d{width:100%;height:clamp(210px,34vh,300px);border-radius:16px;background:radial-gradient(circle at 50% 40%,#1e2a3a,#0b0f14);position:relative;overflow:hidden;margin:8px 0 14px;touch-action:none}
 .fx3d canvas{display:block;width:100%!important;height:100%!important}.fx3d .fxmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;color:#9aa4b2;font-size:13px}
-.fx3d .fxhint{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:11px;color:#9aa4b2;pointer-events:none}
+.fx3d .fxhint{position:absolute;top:8px;right:10px;background:#0b0f14b3;padding:2px 8px;border-radius:8px;font-size:11px;color:#9aa4b2;pointer-events:none}
 .mmap{display:flex;gap:8px;justify-content:center;margin:8px 0}.mmap>div{width:40%;max-width:125px}.mmap .mmcap{font-size:11px;color:#9aa4b2;text-align:center}.mmfb{font-size:13px;color:#9aa4b2}
+.fxload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}.fxload i{width:58px;height:150px;border-radius:29px 29px 14px 14px;background:linear-gradient(100deg,#1d2533 30%,#26324a 50%,#1d2533 70%);background-size:300% 100%;opacity:.8}
+@media (prefers-reduced-motion:no-preference){.fxload i{animation:fxsh 1.4s linear infinite}}@keyframes fxsh{from{background-position:100% 0}to{background-position:-200% 0}}
+.fx3d .fxsr{align-items:flex-end;padding-bottom:14px;font-size:12px}
+#top:empty{display:none}
+@media (max-height:720px){.donebtn{height:100px;font-size:34px}}
+#app::after{content:"";display:block;height:var(--caph,0px)}
 </style>
 </head>
 <body>
@@ -81,7 +87,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.7.1"></script>
+<script src="js/config.js?v=0.7.2"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -117,7 +123,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.7.1';
+const SCHEMA=4,APPVER='0.7.2';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -596,33 +602,52 @@ function render(){_render();try{window.dispatchEvent(new Event('fc-render'))}cat
 function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementById('app');el.innerHTML=SC[S.screen]();
  const st=stepCount(),canBack=S.hist.length&&!['baseline','results','session','sessionDone'].includes(S.screen);
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="${st}"><i style="width:${st/8*100}%"></i></div><span class="steptxt">Step ${st} of 8</span>`:'<span style="flex:1"></span>'}`;
+ if(!canBack&&!st)document.getElementById('top').innerHTML='';
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.7.1"></script>
-<script src="js/app.js?v=0.7.1"></script>
-<script src="js/v05.js?v=0.7.1"></script>
-<script src="js/v06.js?v=0.7.1"></script>
-<script src="js/v07.js?v=0.7.1"></script>
+<script src="js/engine.js?v=0.7.2"></script>
+<script src="js/app.js?v=0.7.2"></script>
+<script src="js/v05.js?v=0.7.2"></script>
+<script src="js/v06.js?v=0.7.2"></script>
+<script src="js/v07.js?v=0.7.2"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
 function hasWebGL(){try{const c=document.createElement('canvas');return !!(window.WebGLRenderingContext&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}}
+const RM=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(el,'3D preview isn\'t available on this device. Everything else works normally.');
- el.innerHTML='<div class="fxmsg">Loading 3D coach…</div>';
+ el.innerHTML='<div class="fxload" aria-hidden="true"><i></i></div><div class="fxmsg fxsr">Loading 3D coach…</div>';
  try{const THREE=await import('three');const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const {OrbitControls}=await import('three/addons/controls/OrbitControls.js');
   if(!el.isConnected)return;const w=el.clientWidth||340,h=el.clientHeight||220;
   const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio,1.5));r.setSize(w,h);r.setClearColor(0x000000,0);r.outputColorSpace=THREE.SRGBColorSpace;
-  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,w/h,0.1,50);cam.position.set(0,1.2,3.6);
-  sc.add(new THREE.HemisphereLight(0xdde8ff,0x223344,2.2));const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(2,4,3);sc.add(d);
+  const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(30,w/h,0.1,50);
+  sc.add(new THREE.HemisphereLight(0xe6eeff,0x1a2230,1.6));const d=new THREE.DirectionalLight(0xffffff,2.2);d.position.set(2,4,3);sc.add(d);
+  const rim=new THREE.DirectionalLight(0x5ee6a8,1.1);rim.position.set(-3,2.5,-3);sc.add(rim);
   const gltf=await new GLTFLoader().loadAsync('assets/coach-mannequin.glb');if(!el.isConnected){r.dispose();return}
-  const m=gltf.scene;sc.add(m);const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip)mix.clipAction(clip).play();
-  const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,0.95,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.2;oc.enableDamping=true;oc.update();
-  el.innerHTML='';el.appendChild(r.domElement);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
-  const clock=new THREE.Clock();let raf,vis=true,last=0;
-  // perf: ~30 fps cap, and no drawing while off-screen or while the app is in the background
+  const m=gltf.scene;
+  /* v0.7.2 tint toward the app palette at runtime (the CC0 file itself is unchanged) */
+  m.traverse(o=>{if(o.isMesh&&o.material){const mt=o.material=o.material.clone();if(/joint/i.test(mt.name))mt.color.set(0x5ee6a8);else mt.color.set(0xc3ccdb);mt.roughness=0.55;mt.metalness=0.05}});
+  sc.add(m);
+  /* framing: fit the figure's height (rest pose) to the box, centred, so it never crops on any phone width */
+  const bb=new THREE.Box3().setFromObject(m),sz=bb.getSize(new THREE.Vector3()),ctr=bb.getCenter(new THREE.Vector3());
+  m.position.x-=ctr.x;m.position.z-=ctr.z;m.position.y-=bb.min.y;
+  const H=sz.y,fov=cam.fov*Math.PI/180,fit=(H*1.14)/2/Math.tan(fov/2),fitW=(Math.min(sz.x,H*0.6)*1.25)/2/Math.tan(fov/2)/cam.aspect;
+  const dist=Math.max(fit,fitW);cam.position.set(0,H*0.5,dist);
+  /* soft ground shadow (a blurred disc; cheaper than real-time shadows) */
+  const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);
+  const sh=new THREE.Mesh(new THREE.PlaneGeometry(H*0.55,H*0.55),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=0.002;sc.add(sh);
+  const reduce=RM();const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip){const ac=mix.clipAction(clip);ac.play();if(reduce){mix.update(0.6);ac.paused=true}}
+  const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,H*0.5,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.15;oc.enableDamping=!reduce;oc.update();
+  const cvs=r.domElement;cvs.style.opacity='0';cvs.setAttribute('aria-hidden','true');
+  el.innerHTML='';el.appendChild(cvs);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
+  const clock=new THREE.Clock();let raf,vis=true,last=0,dirty=true;oc.addEventListener('change',()=>{dirty=true});
+  // perf: ~30 fps cap, and no drawing while off-screen or while the app is in the background; reduced motion: draw only on drag
   const io='IntersectionObserver' in window?new IntersectionObserver(es=>{vis=es[0].isIntersecting}):null;if(io)io.observe(el);
   const loop=(t)=>{if(!el.isConnected){cancelAnimationFrame(raf);if(io)io.disconnect();r.dispose();return}raf=requestAnimationFrame(loop);
-   if(!vis||document.hidden||(t-last)<32){if(!vis||document.hidden)clock.getDelta();return}last=t;mix.update(clock.getDelta());oc.update();r.render(sc,cam)};loop(0);
+   if(!vis||document.hidden||(t-last)<32){if(!vis||document.hidden)clock.getDelta();return}last=t;const dt=clock.getDelta();
+   if(reduce){oc.update();if(!dirty)return;dirty=false}else{mix.update(dt);oc.update()}r.render(sc,cam)};
+  r.render(sc,cam);loop(0);
+  requestAnimationFrame(()=>{cvs.style.transition=reduce?'none':'opacity .5s ease-out';cvs.style.opacity='1'});
   el.dataset.ready='1';
  }catch(e){console.warn('3D preview unavailable:',e&&e.message);if(el.isConnected)fallback3d(el,'3D preview couldn\'t load. Everything else works normally.');el.dataset.failed='1'}}
 let MM=null;
