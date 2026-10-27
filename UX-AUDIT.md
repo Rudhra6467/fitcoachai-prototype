@@ -78,3 +78,19 @@ Lighthouse runs on the live site (mobile defaults, two runs each; the 3D coach u
 - **Copy:** the welcome screen no longer promises a time span ("over your first few workouts" instead of "over the next week"). The experience screen says it only changes tone.
 - **Friction:** "Change something" is a single secondary button on Today. A change takes 3 taps (what, why, accept) and can be undone for the day. The lighter-session card can be declined in one tap.
 - **Dead code:** the v0.6 override wrappers (experience masking, settings version patch, calibration card splice, experience copy) are folded into the base files.
+
+## v0.7.2 polish (27 Oct 2026)
+
+Lighthouse, live GitHub Pages site, mobile defaults (simulated throttling, headless Chrome with software WebGL), two runs each:
+
+| | Perf | A11y | Best pr. | SEO | FCP | LCP | TBT | CLS |
+|---|---|---|---|---|---|---|---|---|
+| v0.7.1 before, run 1 | 76 | 100 | 100 | 90 | 1.1 s | 1.3 s | 1,230 ms | 0 |
+| v0.7.1 before, run 2 | 70 | 100 | 100 | 90 | 1.1 s | 1.3 s | 6,530 ms | 0 |
+| v0.7.2 first cut | 70 | 100 | 100 | 90 | 1.1 s | 1.2–1.4 s | 79,200–124,070 ms | 0 |
+| v0.7.2 final, run 1 | 69 | 100 | 100 | 90 | 1.4 s | 1.5 s | 6,290 ms | 0 |
+| v0.7.2 final, run 2 | 70 | 100 | 100 | 90 | 1.1 s | 1.3 s | 10,070 ms | 0 |
+
+- The first v0.7.2 cut made each software-rendered frame about 1 s long (larger framed figure, extra rim light), so TBT exploded. Fix: a **slow-GPU guard**. If 3 frames in a row take over 60 ms, the coach holds its idle pose and only redraws on drag, the same path as reduced motion. Real iPhones with a GPU are not expected to trip it, but this has not been checked on a device.
+- Performance is still capped (about 70) by the 3D coach under Lighthouse's software WebGL. TBT varies a lot from run to run.
+- **Fixes in this pass:** coach auto-framed to its bounding box (no cropping from SE to Pro Max); runtime palette tint (the CC0 GLB is unchanged); soft ground shadow; shimmer placeholder while loading; 0.5 s fade-in; failure fallback; prefers-reduced-motion respected; drag hint moved off the feet; caption bar no longer covers Stop/Skip on iPhone SE (`--caph` spacer, shorter Done button on short screens); empty top band removed on welcome; "Train today anyway" hides after it's tapped.
