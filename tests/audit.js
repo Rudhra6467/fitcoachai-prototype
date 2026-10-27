@@ -14,7 +14,7 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
   if(await has('#talkYes'))await pg.evaluate(()=>say('yes'));else await pg.evaluate(()=>say('twelve'));await pg.waitForTimeout(80);await pg.evaluate(()=>say('okay'));await pg.waitForTimeout(80);await pg.evaluate(()=>say('no'));await pg.waitForTimeout(150);if(await has('#skipRest'))await ck('#skipRest');await pg.waitForTimeout(100)}
  await ck('#startPlan');await rec();
  // to first workout start (check-in + start)
- if(await has('#quickStart'))await ck('#quickStart');else{for(const [k,v] of [['sleep','good'],['energy','high'],['soreness','none'],['pain','no']])await pg.click(`[data-ci="${k}"][data-v="${v}"]`);await ck('#startSession')}await rec();
+ if(!(await has('#quickStart'))&&await has('#trainAnyway'))await ck('#trainAnyway');if(await has('#quickStart'))await ck('#quickStart');else{for(const [k,v] of [['sleep','good'],['energy','high'],['soreness','none'],['pain','no']])await pg.click(`[data-ci="${k}"][data-v="${v}"]`);await ck('#startSession')}await rec();
  const B=JSON.parse(require('fs').readFileSync(__dirname+'/audit_before.json','utf8'));const okT=taps<B.taps,okS=seen.length<B.screens,inSession=seen[seen.length-1].s==='session';
  console.log((okT&&okS&&inSession?'PASS':'FAIL')+` onboarding->first workout: taps ${B.taps}->${taps}, screens ${B.screens}->${seen.length}`);
  console.log(JSON.stringify({taps,screens:seen.length,seen}));require('fs').writeFileSync(process.argv[3]||'/tmp/audit.json',JSON.stringify({taps,screens:seen.length,seen},null,1));

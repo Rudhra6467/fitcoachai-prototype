@@ -36,7 +36,7 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
  await ck('#startPlan');check(await has('#a2hsCard'),'iOS Safari (not installed): Add to Home Screen hint on Today');
  await ck('#a2hsShow');check((await pg.textContent('#app')).includes('Add to Home Screen')&&await has('#installDone'),'install hint screen with steps');await ck('#installDone');
  check(!(await has('#a2hsCard')),'hint dismissed stays dismissed');
- await ck('#quickStart');await ck('#goSet');check(await has('#done'),'session running');
+ if(!(await has('#quickStart'))&&await has('#trainAnyway'))await ck('#trainAnyway');await ck('#quickStart');await ck('#goSet');check(await has('#done'),'session running');
  await pg.evaluate(()=>{Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true});document.dispatchEvent(new Event('visibilitychange'))});await w(100);
  check(await has('#resumeW'),'app backgrounded mid-set -> workout paused');
  await pg.evaluate(()=>{Object.defineProperty(document,'visibilityState',{value:'visible',configurable:true});document.dispatchEvent(new Event('visibilitychange'))});
@@ -69,7 +69,7 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
   const sw=await pg.evaluate(async()=>{const r=await navigator.serviceWorker.ready;for(let i=0;i<60&&!navigator.serviceWorker.controller;i++)await new Promise(z=>setTimeout(z,250));
    const ks=await caches.keys(),c=await caches.open(ks.find(k=>k.startsWith('fcai-')));const keys=(await c.keys()).map(r=>r.url);
    return {active:!!r.active,ctl:!!navigator.serviceWorker.controller,ks,glb:keys.some(u=>u.endsWith('Xbot.glb')),three:keys.some(u=>u.includes('three.module.js')),gltf:keys.some(u=>u.includes('GLTFLoader.js')),n:keys.length}});
-  check(sw.active&&sw.ctl&&sw.ks.includes('fcai-v0.5.0'),'service worker active, versioned cache '+JSON.stringify(sw.ks));
+  check(sw.active&&sw.ctl&&sw.ks.some(k=>/^fcai-v0\.5/.test(k)),'service worker active, versioned cache '+JSON.stringify(sw.ks));
   check(sw.glb&&sw.three&&sw.gltf,'cache holds Xbot.glb + three.js CDN modules ('+sw.n+' files)');
   await ctx.setOffline(true);await pg.reload();await w(2500);
   check((await pg.textContent('#app')).includes("FitcoachAI coach")&&await has('#ack'),'offline reload: app loads');

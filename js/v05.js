@@ -111,3 +111,17 @@ body,button{-webkit-tap-highlight-color:transparent}`;document.head.appendChild(
 function armStop(){setTimeout(()=>{const act=(W&&S.screen==='session'&&!W.paused)||(B&&S.screen==='baseline'&&!['stopped','painStop'].includes(B.phase));if(act&&!recHandler)listen(()=>{})},0)}
 window.addEventListener('fc-render',()=>{persist();wake();armStop()});
 render();
+
+/* ---------- 8. v0.5.1: keep CTAs clear of Safari's floating bottom toolbar (iOS 26) ---------- */
+(function(){const st=document.createElement('style');st.textContent=`
+#phone{min-height:100vh;min-height:100svh}
+@supports(height:100dvh){@media(max-width:499px){#phone{min-height:100dvh}}}
+#app{padding-bottom:calc(110px + env(safe-area-inset-bottom))!important;scroll-padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+body.hasnav #app{padding-bottom:calc(170px + env(safe-area-inset-bottom))!important}
+html.iosweb #app{padding-bottom:calc(140px + env(safe-area-inset-bottom))!important}
+html.iosweb body.hasnav #app{padding-bottom:calc(200px + env(safe-area-inset-bottom))!important}
+html.iosweb #botnav{padding-bottom:calc(6px + env(safe-area-inset-bottom) + 58px)}
+html.iosweb #cap{padding-bottom:calc(10px + env(safe-area-inset-bottom) + 58px)}
+#toast,#cap,.fxhint{pointer-events:none}
+`;document.head.appendChild(st);
+if(isIOS&&!isStandalone())document.documentElement.classList.add('iosweb');})();

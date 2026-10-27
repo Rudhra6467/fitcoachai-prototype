@@ -23,6 +23,7 @@ Everything stays in this browser's localStorage (schema version 2; older prototy
 `tests/` holds Playwright scripts (`node tests/<name>.js <url>`): `inv.js` (engine invariants), `test.js` (onboarding/safety), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop everywhere, resume after reload, offline, backup round-trip, migration, iOS hint).
 
 ## Changelog
+- **v0.5.2** — iPhone hotfix: app no longer crashes ("Something went wrong") when Safari serves a stale v0.4 config.js (safe defaults + ?v= cache-busting on scripts); buttons and tab bar kept clear of Safari's floating bottom toolbar (svh/dvh heights, extra bottom padding, overlays never intercept taps); SW cache fcai-v0.5.2.
 - **v0.5 — Ready to try daily on iPhone (2026-10-26):** Stop button + spoken "stop" on every active-exercise screen, with the verbatim stop wording; pause on backgrounding and resume after a reload, for workouts and the check-in; installable PWA (manifest, PNG icons, iOS meta tags, Add to Home Screen hint, offline service worker with a versioned cache and update prompt); safe areas, 16 px inputs, wake lock, audio unlock; backup restore with validation; versioned storage with migration; onboarding defaults moved into the config as placeholder R18.
 - **v0.4 — Simpler (2026-10-26):** shorter onboarding (40→33 taps), bottom tabs, one-tap start, plain "what changed and why", weekly goal, UX audit.
 - **v0.3:** integration review and polish; reload during Settings edits fixed.
