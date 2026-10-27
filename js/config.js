@@ -43,7 +43,9 @@ const FC_CONFIG={
   // R16 weekly goal + streak definition (goal = the days/week the user chose; streak unit is a placeholder)
   streakUnit:'weeks with at least one workout',
   // R17 one-tap "I feel good" check-in = sleep good, energy good, no soreness, no pain (placeholder; is one tap enough?)
-  quickCheckin:{sleep:'good',energy:'high',soreness:'none',pain:'no'}
+  quickCheckin:{sleep:'good',energy:'high',soreness:'none',pain:'no'},
+  // R18 defaults used because onboarding now skips the tone/reminder/Health screens (placeholder; needs approval)
+  onboardingDefaults:{coachingStyle:'calm',voiceCoaching:true,nudgeMode:'learned',healthKit:null}
  }
 };
 if(typeof module!=='undefined'&&module.exports)module.exports=FC_CONFIG;else root.FC_CONFIG=FC_CONFIG;

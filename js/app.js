@@ -264,7 +264,7 @@ SC.settings=()=>{const p=P(),days=p.hs.answeredAt?Math.floor((appNow()-Date.pars
  <button class="chip ${p.voiceCoaching?'on':''}" id="voiceTog" onclick="P().voiceCoaching=!P().voiceCoaching;save();render()">Voice coaching</button></div>
  <button class="btn sec" id="remBtn" onclick="go('reminders')">Reminders</button><button class="btn sec" id="hkBtn" onclick="go('health')">Apple Health (simulated)</button></div>
  <div class="card"><h2>Your data</h2><p class="sm">Everything stays on this device.</p><button class="btn sec" id="exportBtn" onclick="exportLog()">Export my data (JSON)</button><details class="more"><summary>Advanced</summary><button class="btn sec" onclick="showLog()">View event log</button><button class="btn sec" onclick="go('decisions')">Plan change log</button></details><button class="btn red" onclick="resetAll()">Reset everything</button></div>
- <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v0.4 · draft · values marked "placeholder" are not decided</p>${DEV.on?devBox():''}`};
+ <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v0.5 · draft · values marked "placeholder" are not decided</p>${DEV.on?devBox():''}`};
 function docClear(v){if(!v)return;P().doctorClearanceSelfReportedAt=new Date(v+'T12:00:00').toISOString();logEv('doctor_clearance_self_report',{date:v});computeSafety();save();render();toast(gentleMode()?'Saved. Gentle mode stays on for now.':'Saved. Gentle mode is off.')}
 let verN=0;function verTap(){if(++verN>=5){DEV.on=true;lsSet('fcai_proto_dev',1);toast('Developer tools on');render()}}
 function exportLog(){const blob=new Blob([JSON.stringify({exportedAtUTC:new Date().toISOString(),simulatedDayOffset:simOffset(),state:S,events:lsGet(KL)||[]},null,2)],{type:'application/json'});

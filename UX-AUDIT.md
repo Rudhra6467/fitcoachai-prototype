@@ -49,3 +49,11 @@ Method: a scripted walk (`tests/audit.js`) through the shortest path from first 
 - Onboarding to the first workout: **33 taps, 15 screens** (was 40 and 18). The results screen has 84 words (was 1062).
 - Daily loop: Today to the workout is **1 tap** (was 5).
 - `tests/audit.js` asserts that both numbers dropped.
+
+## v0.5 — ready to try daily on iPhone
+- **Measure screen Stop (safety fix):** every active-exercise screen now has a Stop button and listens for a spoken "stop". That covers the check-in screens (how many, how did it feel, any pain, where, sharp?, stopped that movement) and the workout screens (how many, how hard, any pain, sharp?, rest). Stopping shows the stop-exercising safety wording verbatim. Earlier, some screens (pain questions and workout rest) didn't listen for "stop" at all; a listener is now always armed.
+- **Interrupted check-in or workout:** leaving the app (backgrounding) pauses the workout. Reloading or reopening restores it from this device with a big **Resume workout** button (the current set restarts) or **Stop workout**. An interrupted check-in resumes at the same step, and a half-filled daily check-in is kept.
+- **Spoken-caption overlap:** the spoken-text caption no longer blocks taps on the buttons under it.
+- **iPhone:** safe areas, 16 px inputs (no zoom), the screen stays awake during workouts where supported, audio is unlocked on the first tap, and an "Add to Home Screen" hint appears in Safari (dismissible).
+- **Data:** Settings → Restore from a backup (validated). Storage is versioned (schema 2), and older data migrates automatically.
+- **Still open (not changed, need decisions):** onboarding defaults (R18).
