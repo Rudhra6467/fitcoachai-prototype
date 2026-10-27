@@ -48,7 +48,7 @@ From `README.md` → Changelog and `git log`:
 - A vanilla JS PWA with no build step. Classic scripts share globals and load in this order: inline script in `index.html` (onboarding, health check, baseline, storage, migration) → `js/config.js` → `js/engine.js` → `js/app.js` → `js/v05.js` → `js/v06.js` → `js/v07.js`.
 - Later version files are **override layers**: they wrap or replace earlier functions and screens (`SC.<screen>`). `js/v07.js` runs the boot and the first full render. Some v0.6 overrides were folded back into the base files in v0.7.
 - `js/engine.js` is **pure**: no clock, no randomness, and no DOM (checked by `tests/inv.js`). It also loads in Node.
-- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.2`) that precaches the app, three.js and the 3D model.
+- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.7.2b`) that precaches the app, three.js and the 3D model.
 
 ### File map
 | Path | Role |

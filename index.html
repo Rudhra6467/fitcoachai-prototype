@@ -643,9 +643,12 @@ async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(
   const clock=new THREE.Clock();let raf,vis=true,last=0,dirty=true;oc.addEventListener('change',()=>{dirty=true});
   // perf: ~30 fps cap, and no drawing while off-screen or while the app is in the background; reduced motion: draw only on drag
   const io='IntersectionObserver' in window?new IntersectionObserver(es=>{vis=es[0].isIntersecting}):null;if(io)io.observe(el);
+  let slow=false,slowN=0;
   const loop=(t)=>{if(!el.isConnected){cancelAnimationFrame(raf);if(io)io.disconnect();r.dispose();return}raf=requestAnimationFrame(loop);
    if(!vis||document.hidden||(t-last)<32){if(!vis||document.hidden)clock.getDelta();return}last=t;const dt=clock.getDelta();
-   if(reduce){oc.update();if(!dirty)return;dirty=false}else{mix.update(dt);oc.update()}r.render(sc,cam)};
+   if(reduce||slow){oc.update();if(!dirty)return;dirty=false}else{mix.update(dt);oc.update()}const t0=performance.now();r.render(sc,cam);
+   /* slow GPU guard: if frames keep taking >60 ms (software rendering, very old phones), hold the idle pose and draw only on drag */
+   if(!slow){slowN=(performance.now()-t0>60)?slowN+1:0;if(slowN>=3)slow=true}};
   r.render(sc,cam);loop(0);
   requestAnimationFrame(()=>{cvs.style.transition=reduce?'none':'opacity .5s ease-out';cvs.style.opacity='1'});
   el.dataset.ready='1';
