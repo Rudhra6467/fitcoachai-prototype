@@ -16,6 +16,8 @@ function range(kind,gentle){const k=gentle?'gentle':'standard';return (kind==='h
 function rg(ps,ctx){return range(ps.kind,!!(ctx&&ctx.gentle))}
 const MSG={
  PAIN_STOP_PATTERN:'Pain during this movement: it stops here and leaves your plan until you have 3 pain-free sessions over at least 7 days.',
+ SWAPPED:'Swapped for another exercise today, so this one doesn\'t move up or down.',
+ EASED_HOLD:'Lighter session after a tough one, so nothing moves up or down.',
  TRIAGE_NO_PROGRESS:'Shorter session today, so this one doesn\'t count towards moving up or down.',
  UNKNOWN_COUNT_HOLD:'We didn\'t get a count, so nothing changes. Unknown isn\'t treated as good or bad.',
  STEP_VERIFIED:'The new step held up a second time. It now counts as your level.',
@@ -57,8 +59,11 @@ function init(o){
  return e}
 function prescribe(e,p,ctx){const ps=e.patterns[p];if(!ps||ps.status==='notReady')return null;
  const [lo,hi]=rg(ps,ctx);let lvl=ps.lvl;if(ctx&&ctx.gentle)lvl=Math.min(lvl,GCAP);if(ps.injury&&ps.status==='gentle')lvl=0;
- const short=ctx&&ctx.triage==='short';
- return {pattern:p,lvl,kind:ps.kind,lo,hi,target:Math.min(hi,Math.max(lo,ps.target)),sets:short?1:ps.sets,status:ps.status}}
+ const short=ctx&&ctx.triage==='short',eased=ctx&&ctx.triage==='eased';
+ let target=Math.min(hi,Math.max(lo,ps.target));
+ /* eased (v0.7): same level and sets, target lowered by at most one small step, never below the range floor */
+ if(eased){const st=(ctx.easeStep||{})[ps.kind];target=Math.max(lo,target-(st!=null?st:1))}
+ return {pattern:p,lvl,kind:ps.kind,lo,hi,target,sets:short?1:ps.sets,status:ps.status,...(eased?{eased:true}:{})}}
 function applySession(e0,s,ctx){ctx=ctx||{};const e=clone(e0);e.sessionCount++;const n=e.sessionCount,at=s.atISO,D=[];
  const d=(code,pattern,extra)=>D.push({code,pattern,msg:MSG[code]+(extra?' '+extra:''),at,session:n});
  const anyPain=!!s.checkinPain||(s.results||[]).some(r=>r.pain);
@@ -66,10 +71,12 @@ function applySession(e0,s,ctx){ctx=ctx||{};const e=clone(e0);e.sessionCount++;c
  const cands=[];
  (s.results||[]).forEach(r=>{const p=r.pattern,ps=e.patterns[p];if(!ps)return;
   if(r.skipped){d('SKIPPED',p);return}
+  if(r.swapped){d('SWAPPED',p);return}
   const [lo,hi]=rg(ps,ctx);ps.target=Math.min(hi,Math.max(lo,ps.target));
   ps.obs.push({at,lvl:r.lvl,tgt:ps.target,sets:r.sets,effort:r.effort||null,pain:!!r.pain,triage:s.triage||'full'});
   if(r.pain){ps.status='notReady';ps.injury=true;ps.painFree=[];ps.pendingVerify=false;ps.clean=0;ps.flat=0;d('PAIN_STOP_PATTERN',p);return}
   if(s.triage==='short'){d('TRIAGE_NO_PROGRESS',p);return}
+  if(s.triage==='eased'){d('EASED_HOLD',p);return}
   const sets=r.sets||[],known=sets.length>0&&sets.every(x=>x!=null&&isFinite(x));
   const poor=r.effort==='hard'||(known&&sets.some(x=>x<lo));
   if(!known&&!poor){d('UNKNOWN_COUNT_HOLD',p);return}

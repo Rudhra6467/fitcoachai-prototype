@@ -5,7 +5,10 @@ const DEV={on:/[?&]dev=1/.test(location.search)||!!lsGet('fcai_proto_dev'),fast:
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const todayKey=()=>{const d=new Date(appNow());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const fmtDay=iso=>new Date(iso).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
-const ctxG=t=>({gentle:gentleMode(),triage:t||'full'});
+/* defaults; js/v07.js replaces these */
+function planMode(){return 'full'}
+function modToday(){return {skip:[],swap:{},short:false}}
+const ctxG=t=>({gentle:gentleMode(),triage:t||'full',easeStep:CX.easeStep});
 const KIND=p=>p==='cardio'?'time':p==='balance'?'hold':p==='core'?'hold':'reps';
 function kindFor(pat,lvl){if(pat==='core'&&lvl===0&&!P().movementNeeds.includes('seated'))return 'reps';return KIND(pat)}
 function nameFor(pat,lvl){const p=P();if(p.movementNeeds.includes('seated'))return SEATED[pat];let ex=LADDER[pat][Math.min(lvl,3)];
@@ -115,15 +118,13 @@ SC.today=()=>{const p=P();if(!E())return `<h1>Today</h1><p>Finish the check-in f
  const extras=()=>{let x='';if(healthDue())x+=`<div class="card" id="rescreen"><b>Time for your 90-day health check.</b><p class="sm">Answers change. It takes a minute.</p><button class="btn sec" onclick="S.returnTo='settings';go('s7')">Re-check now</button></div>`;
   if(nudge)x+=`<div class="card" id="nudge">🔔 ${esc(nudge)}</div>`;
   x+=weekCard();
-  x+=`<div class="card" id="calib"><b>${c.complete?'Your plan is now tuned to you':`Getting to know you: day ${Math.min(c.day,CA.calibrationFloorDays)} of ${CA.calibrationFloorDays}`}</b><div class="bar"><i style="width:${c.pct}%"></i></div>
-  <p class="sm mut">${c.complete?'Based on your own workouts.':'For the first week your plan uses your check-in as a starting point. Each workout teaches me more.'} <span class="flag">(workouts needed: placeholder)</span></p>
-  <details class="sm mut"><summary>Details</summary>${PATTERNS.filter(x=>c.per[x].included).map(x=>`${PSHORT[x]} ${Math.min(c.per[x].obs,c.per[x].need)}/${c.per[x].need}`).join(' · ')}</details></div>`;return x};
+  x+=typeof calibCard==='function'?calibCard(c):'';return x};
  if(done){const sc=done.score||{};h+=`<div class="card" id="doneCard"><h2>Done for today ✓</h2><p>Nice work showing up.</p>${sc.score!=null?`<p class="sm">Workout score <b id="score">${sc.score}</b>/100 · <span class="mut">${esc(sc.why)}</span></p>`:''}
   <p class="sm mut">${esc(nextWorkoutText())}</p><button class="btn sec" onclick="S.lastSession='${done.id}';go('sessionDone')">What changed and why</button></div>`;
   h+=touchCard(true);return h+extras()+devBox()}
  if(!ts.slot){h+=`<div class="card" id="restDay"><h2>Rest day 🌿</h2><p>Recovery is part of the plan. A one-minute check-in keeps the habit going.</p></div>`+touchCard(false)+`<button class="btn sec" id="trainAnyway" onclick="S.anyway=true;render()">Train today anyway</button>`;if(!S.anyway)return h+extras()+devBox()}
  const slot=ts.slot||P().plan.weeks[0][0],pats=sessionPatterns(slot),mins=slot.warmup+slot.main+slot.cooldown;
- h+=`<div class="card" id="todayWorkout"><h2>${esc(slot.type)}</h2><p class="sm mut">About ${mins} min · ${pats.length||1} exercise${pats.length===1?'':'s'} · warm-up and cool-down included</p><ul>${pats.map(x=>{const rx=ENG.prescribe(E(),x,ctxG());return `<li><b>${esc(nameFor(x,rx.lvl))}</b> <span class="sm mut">${doseText(rx)}</span></li>`}).join('')||'<li>Gentle walk or easy movement you enjoy (5–10 min)</li>'}</ul>
+ h+=`<div class="card" id="todayWorkout"><h2>${esc(slot.type)}</h2><p class="sm mut">About ${mins} min · ${pats.length||1} exercise${pats.length===1?'':'s'} · warm-up and cool-down included</p><ul>${pats.map(x=>{const rx=ENG.prescribe(E(),x,ctxG(planMode())),m=modToday();if(m.skip.includes(x))return `<li class="mut"><s>${esc(nameFor(x,rx.lvl))}</s> <span class="sm">skipped today</span></li>`;return `<li><b>${esc(m.swap[x]||nameFor(x,rx.lvl))}</b> <span class="sm mut">${doseText(rx)}</span></li>`}).join('')||'<li>Gentle walk or easy movement you enjoy (5–10 min)</li>'}</ul>
  <p class="sm" id="whyLine"><b>Why:</b> ${esc(slot.why)}</p></div>`;
  const tri=triage();
  if(!(CI&&CI.complete)&&!S.ciOpen){h+=`${safe('STOP')}<button class="btn xl" id="quickStart" onclick="quickStart()">I feel good — start workout</button><button class="btn sec" id="somethingOff" onclick="S.ciOpen=true;render()">Not 100% today? Quick check-in first</button>`;return h+extras()+devBox()}
@@ -166,19 +167,19 @@ SC.checkin=()=>{const tri=CI&&CI.complete;return `<h1>Quick check-in</h1>${check
 
 /* ---------- SESSION PLAYER ---------- */
 let W=null;
-function startSession(triageMode){const tri=triage(),ts=todaySlot(),slot=ts.slot||P().plan.weeks[0][0];
- const rx=sessionPatterns(slot).map(x=>{const r=ENG.prescribe(E(),x,ctxG(triageMode));return {...r,name:nameFor(x,r.lvl),skipToday:tri.skip.includes(x)}});
+function startSession(triageMode){const mt=modToday();if(mt.short)triageMode='short';else if(triageMode==='full')triageMode=planMode();const tri=triage(),ts=todaySlot(),slot=ts.slot||P().plan.weeks[0][0];
+ const rx=sessionPatterns(slot).map(x=>{const r=ENG.prescribe(E(),x,ctxG(triageMode));const sw=mt.swap[x];return {...r,name:sw||nameFor(x,r.lvl),...(sw?{swapped:true}:{}),skipToday:tri.skip.includes(x),modSkip:mt.skip.includes(x)}});
  // check-in pain: tighten (no instant clearance later)
  let pre=[];if(CI&&CI.pain==='yes'&&CX.checkinPainMarksPatternNotReady){const want={};tri.skip.forEach(x=>want[x]='notReady');const res=ENG.tighten(E(),want,nowISO());P().eng=res.eng;pre=res.decisions;pushDecisions(pre)}
  W={triage:triageMode,slotType:slot.type,planned:slot.warmup+slot.main+slot.cooldown,rx,i:0,set:0,phase:'intro',sets:[],results:[],startedAt:nowISO(),t0:Date.now(),pre,checkin:CI?{...CI}:null,painPatterns:tri.skip};
- rx.forEach(r=>{if(r.skipToday)W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'checkinPain'})});
- W.rx=rx.filter(r=>!r.skipToday);
+ rx.forEach(r=>{if(r.skipToday)W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'checkinPain'});else if(r.modSkip)W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'modified'})});
+ W.rx=rx.filter(r=>!r.skipToday&&!r.modSkip);
  logEv('session_started',{triage:triageMode,prescriptionSnapshot:rx,checkin:W.checkin,config:FC_CONFIG.RESEARCH_NEEDED});
  if(!W.rx.length)return finishSession(false);go('session');sayPhase()}
 const cur=()=>W.rx[W.i];
 function unit(r){return r.kind==='hold'?'seconds':r.kind==='time'?'minutes':'reps'}
 SC.session=()=>{if(!W)return `<p>No session running.</p><button class="btn" onclick="go('today',false)">Back to Today</button>`;const r=cur(),stopB=`<button class="btn red" id="stopSession" onclick="stopSession()">Stop workout</button>`;
- const head=`<div class="bar" aria-hidden="true"><i style="width:${W.i/W.rx.length*100}%"></i></div><p class="sm mut">Exercise ${W.i+1} of ${W.rx.length} · set ${Math.min(W.set+1,r.sets)} of ${r.sets}${W.triage==='short'?' · short version':''}</p><h1>${esc(r.name)}</h1>`;
+ const head=`<div class="bar" aria-hidden="true"><i style="width:${W.i/W.rx.length*100}%"></i></div><p class="sm mut">Exercise ${W.i+1} of ${W.rx.length} · set ${Math.min(W.set+1,r.sets)} of ${r.sets}${W.triage==='short'?' · short version':W.triage==='eased'?' · lighter today':''}${r.swapped?' · swapped':''}</p><h1>${esc(r.name)}</h1>`;
  switch(W.phase){
  case 'intro':return head+`<p>${doseText(r)}</p><div class="mmap" data-groups="${PMUS[r.pattern]}" data-color="#22c55e"></div>${safe('PAIN')}<button class="btn xl" id="goSet" onclick="goSet()">Start set</button><button class="btn sec" id="skipEx" onclick="skipEx()">Skip this exercise</button>${stopB}`;
  case 'run':return head+`<div class="big" id="t">0</div><p class="mut">${r.kind==='reps'?'Count your reps. Tap Done when finished.':r.kind==='hold'?`Hold up to ${r.hi} s. Tap Done when you stop.`:`About ${r.target} min at a pace where you can talk.`}</p><p class="cue">Breathe out as you push. Keep breathing.</p><p class="sm mut" id="heard"></p><button class="btn xl" id="done" onclick="setDone()">Done</button>${stopB}`;
@@ -210,7 +211,7 @@ function setEff(v){if(!W||W.phase!=='effort')return;W.effort=v;W.phase='pain';re
 function setPainEx(y){if(!W||W.phase!=='pain')return;unlisten();if(y){W.phase='sharp';render();speak('Is it sharp, or getting worse?');return}pushResult(false);nextEx()}
 function painSharp(sharp){pushResult(true,sharp);if(sharp){logEv('session_pain_stop',{pattern:cur().pattern});return finishSession(true,'sharpPain')}
  toast(`${cur().name}: stopped for today. It leaves your plan until it's been pain-free for a while.`);nextEx()}
-function pushResult(pain,sharp){const r=cur();const res={pattern:r.pattern,lvl:r.lvl,kind:r.kind,sets:W.sets.slice(),effort:W.effort||null,pain:!!pain,sharp:!!sharp,prescription:{...r}};W.results.push(res);logEv('exercise_logged',res);W.sets=[];W.set=0;W.effort=null}
+function pushResult(pain,sharp){const r=cur();const res={pattern:r.pattern,lvl:r.lvl,kind:r.kind,sets:W.sets.slice(),effort:W.effort||null,pain:!!pain,sharp:!!sharp,...(r.swapped?{swapped:true}:{}),prescription:{...r}};W.results.push(res);logEv('exercise_logged',res);W.sets=[];W.set=0;W.effort=null}
 function skipEx(){const r=cur();W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'user'});logEv('exercise_skipped',{pattern:r.pattern});nextEx()}
 function nextEx(){W.i++;W.set=0;W.sets=[];if(W.i>=W.rx.length)return finishSession(false);W.phase='intro';render();sayPhase()}
 function stopSession(){if(!W)return;if(W.sets.length)pushResult(false);logEv('session_stopped_by_user',{at:W.i});finishSession(true,'user')}
@@ -264,7 +265,7 @@ SC.settings=()=>{const p=P(),days=p.hs.answeredAt?Math.floor((appNow()-Date.pars
  <button class="chip ${p.voiceCoaching?'on':''}" id="voiceTog" onclick="P().voiceCoaching=!P().voiceCoaching;save();render()">Voice coaching</button></div>
  <button class="btn sec" id="remBtn" onclick="go('reminders')">Reminders</button><button class="btn sec" id="hkBtn" onclick="go('health')">Apple Health (simulated)</button></div>
  <div class="card"><h2>Your data</h2><p class="sm">Everything stays on this device.</p><button class="btn sec" id="exportBtn" onclick="exportLog()">Export my data (JSON)</button><details class="more"><summary>Advanced</summary><button class="btn sec" onclick="showLog()">View event log</button><button class="btn sec" onclick="go('decisions')">Plan change log</button></details><button class="btn red" onclick="resetAll()">Reset everything</button></div>
- <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v0.6.0 · draft · values marked "placeholder" are not decided</p>${DEV.on?devBox():''}`};
+ <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v${APPVER} · draft · values marked "placeholder" are not decided</p>${DEV.on?devBox():''}`};
 function docClear(v){if(!v)return;P().doctorClearanceSelfReportedAt=new Date(v+'T12:00:00').toISOString();logEv('doctor_clearance_self_report',{date:v});computeSafety();save();render();toast(gentleMode()?'Saved. Gentle mode stays on for now.':'Saved. Gentle mode is off.')}
 let verN=0;function verTap(){if(++verN>=5){DEV.on=true;lsSet('fcai_proto_dev',1);toast('Developer tools on');render()}}
 function exportLog(){const blob=new Blob([JSON.stringify({exportedAtUTC:new Date().toISOString(),simulatedDayOffset:simOffset(),state:S,events:lsGet(KL)||[]},null,2)],{type:'application/json'});

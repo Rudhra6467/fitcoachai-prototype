@@ -57,8 +57,18 @@ const FC_CONFIG={
   performanceScore:{weights:{completion:0.4,volume:0.4,adherence:0.2},adherenceUnplannedDay:0.75},
   // R22 set timing: average seconds per rep below this reads as "finished fast" (copy only; never changes the dose)
   fastSecPerRep:2,
-  // R23 post-session check-in effects: pain + area -> those patterns go on hold (same as R11); effort and energy are recorded only
+  // R23 post-session check-in effects: pain + area -> those patterns go on hold (same as R11).
+  // v0.7: "Hard" overall effort or "Low" energy -> the NEXT session only is eased: same level and sets, target one small step lower
+  // (never below the range floor), and it does not count towards moving up or down. One bad day never lowers a level.
   postCheckPainMarksPatternNotReady:true,
+  easeNextIf:{effort:['hard'],energy:['low']},
+  easeStep:{reps:2,hold:5,time:1},
+  // R25 modification path: reasons and what the coach offers first (counter-offer -> accept with adjustment -> accept with disclaimer)
+  modReasons:['pain','fatigue','equipment','schedule','other'],
+  modCounter:{pain:'none',fatigue:'short',equipment:'seated',schedule:'short',other:'none'},
+  modReasonRequiredAfterCalibration:true,
+  // R26 days-per-week suggestion: anyone choosing 5+ days is offered 3 to start (no longer tied to the experience answer)
+  suggestThreeDaysFrom:5,
   // R24 experience answer -> coaching tone copy only (never difficulty)
   experienceTone:{
    new:"We'll start easy and build from what you actually do.",

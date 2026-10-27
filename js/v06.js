@@ -10,7 +10,6 @@ const beginnerLvl=pat=>pat==='core'&&P().postpartumMode?0:(CX6.beginnerLevel[pat
 const toneLine=()=>CX6.experienceTone[P().experience]||CX6.experienceTone.new||'';
 
 /* ---------- 1. Everyone starts as a beginner; experience never sets difficulty ---------- */
-{const _v=variantFor;variantFor=function(pat){const p=P(),e=p.experience;p.experience='new';try{return _v(pat)}finally{p.experience=e}}}
 {const _ex=exFor;exFor=function(pat){const p=P(),R=p.patternReadiness[pat]||{level:'notAssessed'};if(R.level==='notReady')return null;
  if(p.movementNeeds.includes('seated'))return SEATED[pat];
  const lvl=calDone()&&E().patterns[pat]?E().patterns[pat].lvl:beginnerLvl(pat);return nameFor(pat,lvl)}}
@@ -18,7 +17,6 @@ const toneLine=()=>CX6.experienceTone[P().experience]||CX6.experienceTone.new||'
  ENG.PATS.forEach(x=>{const ps=e.patterns[x];const l=beginnerLvl(x),k=kindFor(x,l);ps.lvl=l;ps.kind=k;ps.target=ENG.range(k,gentleMode())[0];ps.capability=null});
  p.calib={startedAt:nowISO(),completedAt:null};p.plan=buildPlan();
  logEv('calibration_started',{levels:Object.fromEntries(ENG.PATS.map(x=>[x,e.patterns[x].lvl])),rule:'everyone starts as a beginner',thresholds:CX6.calibration});save();render()}}
-{const _s5=SC.s5;SC.s5=()=>_s5().replace('No wrong answers. Your check-in workout will fine-tune this.','No wrong answers. This only changes how I talk to you. Everyone starts at the beginner level, and your workouts decide when to move up.')}
 {const _r=SC.results;SC.results=()=>_r().replace("It's not a fitness grade.</p>","It's not a fitness grade.</p><p class=\"sm\" id=\"beginnerNote\">Everyone starts at the beginner level. Your first few workouts show me what suits you, then I'll build your plan.</p>")}
 
 /* ---------- 2. Quietly record per-set timing ("done" timestamps) and rest ---------- */
@@ -61,7 +59,7 @@ function completeCalibration(rec){const p=P(),c=calib(),cs=calState();cs.complet
 /* one plain-language line for the most important change this session */
 function reasonLine(D,w){const nm=p=>{const r=(w.rx||[]).find(x=>x.pattern===p);return r?r.name:(PSHORT[p]||p)};
  const res=p=>(w.results||[]).find(r=>r.pattern===p)||{},rx=p=>(w.rx||[]).find(r=>r.pattern===p)||{};
- const order=['PAIN_STOP_PATTERN','INJURY_REPORTED','STEP_VERIFY_FAIL_REVERT','REVISE_LEVEL_DOWN','STEP_UP','STEP_VERIFIED','ADD_REP','REVISE_VOLUME','INJURY_GATE_STEP','TOP_OF_RANGE','PLATEAU_ADD_SET','PLATEAU_TEMPO','BAD_DAY_RETAIN','DAMAGE_CAP_HOLD','UNKNOWN_COUNT_HOLD','TRIAGE_NO_PROGRESS'];
+ const order=['PAIN_STOP_PATTERN','INJURY_REPORTED','STEP_VERIFY_FAIL_REVERT','REVISE_LEVEL_DOWN','STEP_UP','STEP_VERIFIED','ADD_REP','REVISE_VOLUME','INJURY_GATE_STEP','TOP_OF_RANGE','PLATEAU_ADD_SET','PLATEAU_TEMPO','BAD_DAY_RETAIN','DAMAGE_CAP_HOLD','UNKNOWN_COUNT_HOLD','TRIAGE_NO_PROGRESS','EASED_HOLD','SWAPPED'];
  const d=order.map(c=>D.find(x=>x.code===c)).find(Boolean);if(!d)return 'Same plan next time. Steady is good.';const n=nm(d.pattern);
  switch(d.code){
  case 'PAIN_STOP_PATTERN':case 'INJURY_REPORTED':return `${n}: you felt pain, so it's on hold until it's been pain-free for a while.`;
@@ -79,7 +77,9 @@ function reasonLine(D,w){const nm=p=>{const r=(w.rx||[]).find(x=>x.pattern===p);
  case 'PLATEAU_TEMPO':return `${n}: steady for a while, so next time try it slower.`;
  case 'BAD_DAY_RETAIN':case 'DAMAGE_CAP_HOLD':return `${n} felt hard today. One hard day never lowers your level, so it stays the same.`;
  case 'UNKNOWN_COUNT_HOLD':return `No count for ${n}, so nothing changes there.`;
- case 'TRIAGE_NO_PROGRESS':return 'Short version today, so nothing moves up or down.'}
+ case 'TRIAGE_NO_PROGRESS':return 'Short version today, so nothing moves up or down.';
+ case 'EASED_HOLD':return 'Lighter session today, so nothing moves up or down.';
+ case 'SWAPPED':return `${n} was swapped today, so it stays the same.`}
  return 'Same plan next time. Steady is good.'}
 
 let PC=null;
@@ -122,8 +122,7 @@ function calibCard(c,compact){if(calDone())return `<div class="card" id="calib" 
  <p class="sm mut">${c.extending?esc(why.charAt(0).toUpperCase()+why.slice(1))+'.':esc(toneLine())} <span class="flag">(thresholds: placeholder)</span></p>
  ${!compact&&last?`<p class="sm" id="lastReason"><b>Last change:</b> ${esc(last.reason)}</p>`:''}
  ${compact?'':`<details class="sm mut"><summary>Details</summary>${PATTERNS.filter(x=>c.per[x].included).map(x=>`${PSHORT[x]} ${Math.min(c.per[x].obs,c.per[x].need)}/${c.per[x].need}${c.per[x].personalized?' ✓':''}`).join(' · ')}<br>Only full sessions with counts logged teach me. Short or stopped sessions still count for you.</details>`}</div>`}
-{const _t=SC.today;SC.today=()=>{let h=_t();if(!E())return h;const i=h.indexOf('<div class="card" id="calib">');if(i<0)return h;const j=h.indexOf('</details></div>',i);if(j<0)return h;
- h=h.slice(0,i)+calibCard(calib())+h.slice(j+'</details></div>'.length);
+{const _t=SC.today;SC.today=()=>{let h=_t();if(!E())return h;
  if(calDone()&&!calState().planShown)h=h.replace('<h1>','<div class="card" id="planReadyBanner"><b>Your plan is ready 🎉</b><p class="sm">Built from your own sessions.</p><button class="btn" id="seePlan3" onclick="go(\'planReady\')">See my plan</button></div><h1>');
  return h}}
 
@@ -139,7 +138,6 @@ SC.planReady=()=>{const p=P();if(!calDone())return '<p>Still getting to know you
 MAIN.push('planReady');TABOF.planReady='today';
 
 /* ---------- Settings version line ---------- */
-{const _s=SC.settings;SC.settings=()=>_s().replace(/FitcoachAI prototype v[0-9.]+ ·/,'FitcoachAI prototype v'+APPVER+' ·')}
 
 /* ---------- Dev: auto-play calibration sessions (clean or messy) through the same pipeline ---------- */
 autoDay=function(messy){const ts=todaySlot();if(!ts.slot||doneToday()){if(!(P().touch||{})[todayKey()])markTouch('check-in',{simulated:true});return false}
@@ -153,8 +151,3 @@ autoDay=function(messy){const ts=todaySlot();if(!ts.slot||doneToday()){if(!(P().
 function simCalib(messy){let n=0,g=0;while(n<6&&g++<40){if(autoDay(messy))n++;lsSet(CLK,{days:simOffset()+1});logEv('sim_day_advanced',{to:simOffset()})}CI=null;S.anyway=false;save();render();toast(`${n} simulated ${messy?'messy ':''}sessions added.`)}
 {const _db=devBox;devBox=function(){const h=_db();if(!h)return h;return h.replace(/<\/div>$/,`<div class="row"><button class="btn sec" id="simCal" onclick="simCalib(false)">Auto-play 6 sessions</button><button class="btn sec" id="simMessy" onclick="simCalib(true)">6 messy sessions</button></div></div>`)}}
 
-/* ---------- boot: resume a pending check-in; migrated data that already meets calibration ---------- */
-if(E()){calState();if(P().pendingPost&&S.screen!=='postCheck'){S.screen='postCheck';S.hist=[]}
- if(!calDone()&&calib().complete){completeCalibration(null);logEv('calibration_complete_from_history',{})}save()}
-if(S.screen==='postCheck'&&!P().pendingPost)S.screen=E()?'today':'s1';
-render();

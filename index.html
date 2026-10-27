@@ -14,6 +14,7 @@
 <meta name="apple-mobile-web-app-title" content="FitcoachAI">
 <meta name="format-detection" content="telephone=no">
 <style>
+a{color:var(--acc)}
 :root{--bg:#0b0d12;--card:#151924;--card2:#1d2230;--line:#2a3142;--tx:#e9edf5;--mut:#9aa4b8;--acc:#5ee6a8;--warn:#ffcf5a;--bad:#ff6b6b;--r:16px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:#05060a;color:var(--tx);font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",Segoe UI,Roboto,sans-serif}
@@ -30,6 +31,8 @@ h1{font-size:26px;line-height:1.2;margin:10px 0 12px}h2{font-size:19px;margin:20
 p{margin:8px 0}.mut{color:var(--mut)}.sm{font-size:13px}
 .safe{background:var(--card);border-left:4px solid var(--warn);border-radius:10px;padding:12px;margin:12px 0;font-weight:600;font-size:14px}
 .safe.stop{border-color:var(--bad)}.safe.doc{border-color:#ffa94d}.safe.food{border-color:#6cb8ff}.safe.pain{border-color:#ff8fab}
+.link{background:none;border:0;color:var(--acc);text-decoration:underline;font:inherit;min-height:44px;padding:8px 0;cursor:pointer;display:block}
+.modList{list-style:none;padding:0}.modList li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #ffffff14}.modList li span{display:flex;gap:6px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
 .chip{background:var(--card2);color:var(--tx);border:1.5px solid var(--line);border-radius:22px;padding:10px 14px;min-height:44px;font-size:15px;cursor:pointer}
 .chip.on{border-color:var(--acc);background:#11382a;color:#fff}.chip.on::before{content:"✓ ";color:var(--acc)}
@@ -77,8 +80,8 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="sheet" role="dialog" aria-modal="true"><div class="in" id="sheetIn"></div></div>
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.6.0"></script>
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+<script src="js/config.js?v=0.7.0"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -114,7 +117,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=3,APPVER='0.6.0';
+const SCHEMA=4,APPVER='0.7.0';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -123,6 +126,7 @@ function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object'
  if(!Array.isArray(o.hist))o.hist=[];if(o.p.eng&&!Array.isArray(o.p.sessions))o.p.sessions=[];
  /* v3 (v0.6): calibration state; existing users keep their data (never deleted) */
  if(o.p.eng&&!o.p.calib)o.p.calib={startedAt:o.p.planStartedAt||o.p.eng.startedAt||null,completedAt:null,migrated:true};
+ if(from<4){o.p.ease=o.p.ease||null;o.p.mods=o.p.mods||{}}
  if(from<SCHEMA){o.migratedFrom=from;o.schemaVersion=SCHEMA;o._justMigrated=true}return o}
 let S=migrateState(lsGet(KP))||freshState();S.schemaVersion=SCHEMA;
 if(S._justMigrated){delete S._justMigrated;setTimeout(()=>{logEv('storage_migrated',{from:S.migratedFrom,to:SCHEMA});save()},0)}
@@ -216,7 +220,7 @@ function next(){const p=P(),s=S.screen;let t=null;
  case 's8':if(!p.jobActivity||!p.workPattern)return toast('Please answer both questions.');t='s9';break;
  case 's9':p.equipmentAnsweredAt=nowISO();t='s10';break;
  case 's10':{const d=p.days==='6'?6:Number(p.days);computeSafety();
-  if(d>=5&&(['new','lapsed'].includes(p.experience)||gentleMode())&&!S._daysAsked){S._daysAsked=true;return openSheet(`<h2>Starting with 3 days usually works better — want to start there?</h2><button class="btn" onclick="P().days='3';P().keepExtraLight=false;closeSheet();next()">Start with 3</button><button class="btn sec" onclick="P().keepExtraLight=true;closeSheet();next()">Keep my choice</button><p class="mut sm">If you keep it, the extra days become light / mobility days.</p>`)}
+  if(d>=(CX.suggestThreeDaysFrom||5)&&!S._daysAsked){S._daysAsked=true;return openSheet(`<h2>Starting with 3 days usually works better — want to start there?</h2><button class="btn" onclick="P().days='3';P().keepExtraLight=false;closeSheet();next()">Start with 3</button><button class="btn sec" onclick="P().keepExtraLight=true;closeSheet();next()">Keep my choice</button><p class="mut sm">If you keep it, the extra days become light / mobility days.</p>`)}
   p.scheduleAnsweredAt=nowISO();t='s13';break}
  case 's11':if(p.nudgeMode==='fixedTime'&&!p.nudgeTime)return toast('Pick a time.');t='s12';break;
  case 's12':t='s13';break;
@@ -231,7 +235,7 @@ const SC={};
 SC.s1=()=>`<h1>Hi, I'm your FitcoachAI coach.</h1>
 <div class="fx3d" data-fx="3d" aria-label="3D coach mannequin — drag to rotate"></div>
 <p>I'll help you build a routine that fits your body, your schedule, and your life — starting with no equipment.</p>
-<p>First, a few quick questions (about 3 minutes). Then we'll do a short, gentle check-in workout so I can see where you're starting. Over the next week, I'll keep learning what works for you.</p>
+<p>First, a few quick questions (about 3 minutes). Then we'll do a short, gentle check-in workout so I can see where you're starting. Over your first few workouts, I'll keep learning what works for you.</p>
 <p><b>One important thing:</b></p>${safe('REF')}
 <p>I can't promise specific results. What I can do is help you move safely and keep showing up.</p>
 <p class="sm mut">🔒 No account. Your answers and workouts stay on this device. You can delete everything any time in Settings. <a href="#" onclick="go('s2');return false">More about privacy</a></p>
@@ -249,7 +253,7 @@ SC.s3=()=>`<h1>A little about you</h1><h2>How old are you?</h2>${chips('ageRange
 SC.s4=()=>`<h1>What matters most to you right now?</h1><p class="mut"><i>Pick one. You can change it any time.</i></p>${listChips('primaryGoal',GOALS.map(([v,l])=>[v,`<b>${l}</b>`]))}
 ${P().primaryGoal==='weight'?`<p class="mut"><i>We'll focus on regular movement and steady habits, which help most people feel better. We don't give diet plans or promise weight loss.</i></p>${safe('FOOD')}`:''}
 <button class="btn" id="next" onclick="next()">Next</button>`;
-SC.s5=()=>`<h1>How would you describe your exercise lately?</h1>${listChips('experience',EXP)}<p class="mut"><i>No wrong answers. Your check-in workout will fine-tune this.</i></p><button class="btn" id="next" onclick="next()">Next</button>`;
+SC.s5=()=>`<h1>How would you describe your exercise lately?</h1>${listChips('experience',EXP)}<p class="mut"><i>No wrong answers. This only changes how I talk to you. Everyone starts at the beginner level, and your workouts decide when to move up.</i></p><button class="btn" id="next" onclick="next()">Next</button>`;
 
 /* --- Body map (front/back, tappable SVG regions). Front view: user's left is on the image's right. --- */
 let mapSide='front';
@@ -379,7 +383,7 @@ ${safe('STOP')}
 /* ===== Baseline tests (4–6, filtered by body map, gentle mode, movement needs) ===== */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
 function variantFor(pat){const p=P(),n=p.movementNeeds,R=p.patternReadiness[pat]||{level:'notAssessed'};
- const seated=n.includes('seated'),cons=gentleMode(),gentle=cons||R.level==='gentle'||p.experience==='new',active=p.experience==='regular'&&!gentle;
+ const seated=n.includes('seated'),cons=gentleMode(),gentle=true,active=false /* everyone starts as a beginner; experience does not change the test */;
  const noFloor=n.includes('floorHard')||!p.availableItems.includes('floor'),pp=p.postpartumMode,noChair=!p.availableItems.includes('chair')&&!seated,sup=n.includes('balance')||n.includes('oneSide');
  const T=(o)=>Object.assign({pattern:pat,gentle:true,lvl:0},o);
  switch(pat){
@@ -424,10 +428,11 @@ const has=(t,ws)=>ws.some(w=>new RegExp('\\b'+w+'\\b').test(t));
 
 /* ===== Baseline flow ===== */
 function startBaseline(){const sel=selectTests();P().baselineDeferred=false;
- B={tests:sel.tests,skipped:sel.skipped,i:0,phase:'intro',results:[],t0:0,elapsed:0,paused:false,val:null,cur:{},stopped:false};
+ B={tests:sel.tests,skipped:sel.skipped,i:0,phase:'intro',results:[],t0:0,elapsed:0,paused:false,val:null,cur:sel.tests[0]?curFor(sel.tests[0]):{},stopped:false};
  logEv('baseline_started',{tests:B.tests.map(t=>t.id),skipped:B.skipped,voiceAvailable:!!SR});S.screen='baseline';save();
  if(gentleMode())speak(SAFE.STOP,()=>{if(B&&B.phase==='intro'&&B.i===0)introTest()});else introTest();render()}
-function introTest(){const t=B.tests[B.i];B.phase='intro';B.cur={pattern:t.pattern,testID:t.id,variant:t.gentle?'gentle':'standard',lvl:t.lvl,name:t.name};render();
+function curFor(t){return {pattern:t.pattern,testID:t.id,variant:t.gentle?'gentle':'standard',lvl:t.lvl,name:t.name}}
+function introTest(){const t=B.tests[B.i];B.phase='intro';B.cur=curFor(t);render();
  const ask=P().movementNeeds.includes('ratherNot')?' Would you like to try this, or skip?':'';
  speak(`Test ${B.i+1} of ${B.tests.length}: ${t.name}. ${t.how}${ask} Say go, or tap Start, when you're ready.`);
  listen(txt=>{if(!B||B.phase!=='intro')return;if(has(txt,['stop']))stopBaseline('voice');else if(has(txt,['skip']))skipTest();else if(has(txt,['go','start','ready']))goTest('voice')})}
@@ -479,7 +484,7 @@ function doLater(){const p=P();p.baselineDeferred=true;p.baselineResults=[];p.ba
 // Rough "good count" thresholds — only used to decide a one-step-up and to word feedback; never a grade.
 function goodThreshold(pat){const p=P();let v={squat:12,push:15,hinge:15,core:25,balance:15}[pat]||99;if(['r60_69','r70plus'].includes(p.ageRange))v=Math.round(v*0.8);if(p.sexForReference==='female'&&pat==='push')v-=3;return v}
 function scoreResults(results){computeReadiness();const R=JSON.parse(JSON.stringify(P().patternReadiness)),g=gentleMode();
- results.forEach(r=>{const pat=r.pattern,prior=R[pat]||(R[pat]={level:'notAssessed'});let lvl,step=false,note;
+ results.forEach(r=>{const pat=r.pattern,prior=R[pat];let lvl,step=false,note;
   if(r.skippedByUser){R[pat]=Object.assign(prior,{level:prior.level==='notReady'?'notReady':'notAssessed',note:"You skipped this one — that's fine. It stays \"not assessed\" and starts at the easiest version.",result:r});return}
   const val=r.reps!=null?r.reps:r.holdSec,unit=r.reps!=null?'reps':'seconds';
   if(r.pain){lvl='notReady';note=`You felt pain${r.painRegion?' in your '+REGIONS[r.painRegion]:''}, so this movement is out of your plan for now. It comes back step by step only after 3 pain-free sessions over at least 7 days per step.`}
@@ -593,10 +598,11 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="${st}"><i style="width:${st/8*100}%"></i></div><span class="steptxt">Step ${st} of 8</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.6.0"></script>
-<script src="js/app.js?v=0.6.0"></script>
-<script src="js/v05.js?v=0.6.0"></script>
-<script src="js/v06.js?v=0.6.0"></script>
+<script src="js/engine.js?v=0.7.0"></script>
+<script src="js/app.js?v=0.7.0"></script>
+<script src="js/v05.js?v=0.7.0"></script>
+<script src="js/v06.js?v=0.7.0"></script>
+<script src="js/v07.js?v=0.7.0"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
@@ -605,14 +611,18 @@ async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(
  el.innerHTML='<div class="fxmsg">Loading 3D coach…</div>';
  try{const THREE=await import('three');const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const {OrbitControls}=await import('three/addons/controls/OrbitControls.js');
   if(!el.isConnected)return;const w=el.clientWidth||340,h=el.clientHeight||220;
-  const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio,2));r.setSize(w,h);r.setClearColor(0x000000,0);r.outputColorSpace=THREE.SRGBColorSpace;
+  const r=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});r.setPixelRatio(Math.min(devicePixelRatio,1.5));r.setSize(w,h);r.setClearColor(0x000000,0);r.outputColorSpace=THREE.SRGBColorSpace;
   const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,w/h,0.1,50);cam.position.set(0,1.2,3.6);
   sc.add(new THREE.HemisphereLight(0xdde8ff,0x223344,2.2));const d=new THREE.DirectionalLight(0xffffff,2);d.position.set(2,4,3);sc.add(d);
   const gltf=await new GLTFLoader().loadAsync('assets/Xbot.glb');if(!el.isConnected){r.dispose();return}
   const m=gltf.scene;sc.add(m);const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip)mix.clipAction(clip).play();
   const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,0.95,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.2;oc.enableDamping=true;oc.update();
   el.innerHTML='';el.appendChild(r.domElement);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
-  const clock=new THREE.Clock();let raf;const loop=()=>{if(!el.isConnected){cancelAnimationFrame(raf);r.dispose();return}raf=requestAnimationFrame(loop);mix.update(clock.getDelta());oc.update();r.render(sc,cam)};loop();
+  const clock=new THREE.Clock();let raf,vis=true,last=0;
+  // perf: ~30 fps cap, and no drawing while off-screen or while the app is in the background
+  const io='IntersectionObserver' in window?new IntersectionObserver(es=>{vis=es[0].isIntersecting}):null;if(io)io.observe(el);
+  const loop=(t)=>{if(!el.isConnected){cancelAnimationFrame(raf);if(io)io.disconnect();r.dispose();return}raf=requestAnimationFrame(loop);
+   if(!vis||document.hidden||(t-last)<32){if(!vis||document.hidden)clock.getDelta();return}last=t;mix.update(clock.getDelta());oc.update();r.render(sc,cam)};loop(0);
   el.dataset.ready='1';
  }catch(e){console.warn('3D preview unavailable:',e&&e.message);if(el.isConnected)fallback3d(el,'3D preview couldn\'t load. Everything else works normally.');el.dataset.failed='1'}}
 let MM=null;
@@ -624,7 +634,9 @@ async function mountMap(el){el.dataset.done='1';const groups=(el.dataset.groups|
    new MM.MuscleMap(host,{gender,view,theme:'dark',width:'100%',highlights:hl,hoverHighlight:false})}
   el.dataset.ready='1';
  }catch(e){console.warn('Muscle map unavailable:',e&&e.message);if(el.isConnected)el.innerHTML='<div class="mmfb">Works: '+groups.map(g=>g.replace('_',' ')).join(', ')+'</div>';el.dataset.failed='1'}}
-function scan(){document.querySelectorAll('[data-fx="3d"]:not([data-done])').forEach(mount3d);document.querySelectorAll('.mmap:not([data-done])').forEach(mountMap)}
+// perf: the 3D coach (three.js + 2.9 MB model) starts only after the first screen is drawn and the browser is idle
+const idle=f=>('requestIdleCallback' in window)?requestIdleCallback(f,{timeout:1500}):setTimeout(f,400);
+function scan(){document.querySelectorAll('[data-fx="3d"]:not([data-done]):not([data-wait])').forEach(el=>{el.dataset.wait='1';idle(()=>{delete el.dataset.wait;if(el.isConnected&&!el.dataset.done)mount3d(el)})});document.querySelectorAll('.mmap:not([data-done])').forEach(mountMap)}
 window.addEventListener('fc-render',scan);scan();
 </script>
 </body>

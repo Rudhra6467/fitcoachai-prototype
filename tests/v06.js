@@ -64,13 +64,13 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
  check(jump<=1,'level never changes by more than 1 between sessions (max '+jump+')');
  check(await pg.evaluate(()=>P().sessions.every(s=>s.score&&s.score.formula==='R21-placeholder')),'every session has a Performance Score');
  // --- version
- await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.6.0'),'settings version line v0.6.0');
+ await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.7.0'),'settings version line v0.7.0');
  const html=await (await pg.request.get(BASE+'index.html')).text(),sw=await (await pg.request.get(BASE+'sw.js')).text();
- check(!html.includes('v=0.5')&&html.includes('js/v06.js?v=0.6.0')&&sw.includes("fcai-v0.6.0")&&sw.includes('js/v06.js'),'?v=0.6.0 everywhere + SW cache fcai-v0.6.0');
+ check(!html.includes('v=0.5')&&!html.includes('v=0.6')&&html.includes('js/v07.js?v=0.7.0')&&sw.includes("fcai-v0.7.0")&&sw.includes('js/v07.js'),'?v=0.7.0 everywhere + SW cache fcai-v0.7.0');
  // --- migration from v0.5 (schema 2) keeps data
  const old=await pg.evaluate(()=>{const o=JSON.parse(localStorage.getItem(KP));o.schemaVersion=2;delete o.p.calib;const n=o.p.sessions.length;localStorage.setItem(KP,JSON.stringify(o));return n});
  await pg.reload();await pg.waitForTimeout(400);
  const mg=await pg.evaluate(()=>({v:S.schemaVersion,calib:!!P().calib,n:P().sessions.length}));
- check(mg.v===3&&mg.calib&&mg.n===old,'v0.5 data migrates to schema 3, sessions kept '+JSON.stringify(mg));
+ check(mg.v===4&&mg.calib&&mg.n===old,'v0.5 data migrates to schema 4, sessions kept '+JSON.stringify(mg));
  check(errs.length===0,'no console errors '+JSON.stringify(errs.slice(0,3)));
  await br.close();console.log(fails?fails+' FAILURES':'ALL PASSED');process.exit(fails?1:0)})();
