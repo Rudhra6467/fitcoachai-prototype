@@ -1,0 +1,114 @@
+{
+ "taps": 40,
+ "screens": 18,
+ "seen": [
+  {
+   "s": "s1",
+   "w": 127,
+   "h": "Hi, I'm your FitcoachAI coach.",
+   "taps": 2
+  },
+  {
+   "s": "s2",
+   "w": 101,
+   "h": "Your data stays on your phone.",
+   "taps": 1
+  },
+  {
+   "s": "s3",
+   "w": 41,
+   "h": "A little about you",
+   "taps": 3
+  },
+  {
+   "s": "s4",
+   "w": 57,
+   "h": "What matters most to you right now?",
+   "taps": 1
+  },
+  {
+   "s": "s5",
+   "w": 66,
+   "h": "How would you describe your exercise lately?",
+   "taps": 2
+  },
+  {
+   "s": "s6",
+   "w": 80,
+   "h": "Anything we should be careful with?",
+   "taps": 1
+  },
+  {
+   "s": "s7",
+   "w": 203,
+   "h": "A quick health check",
+   "taps": 7
+  },
+  {
+   "s": "s8",
+   "w": 83,
+   "h": "What does a typical work day look like for your body?",
+   "taps": 3
+  },
+  {
+   "s": "s9",
+   "w": 78,
+   "h": "Where will you usually work out?",
+   "taps": 4
+  },
+  {
+   "s": "s10",
+   "w": 40,
+   "h": "How much time can you realistically give?",
+   "taps": 1
+  },
+  {
+   "s": "s11",
+   "w": 65,
+   "h": "How should I coach you?",
+   "taps": 1
+  },
+  {
+   "s": "s12",
+   "w": 66,
+   "h": "Connect Apple Health? (optional)",
+   "taps": 1
+  },
+  {
+   "s": "s13",
+   "w": 120,
+   "h": "Here's what we heard",
+   "taps": 1
+  },
+  {
+   "s": "s14",
+   "w": 184,
+   "h": "Let's see where you're starting",
+   "taps": 1
+  },
+  {
+   "s": "baseline",
+   "w": 58,
+   "h": "Sit-to-stand from a chair",
+   "taps": 5
+  },
+  {
+   "s": "results",
+   "w": 1062,
+   "h": "Here's what we saw",
+   "taps": 1
+  },
+  {
+   "s": "today",
+   "w": 224,
+   "h": "Today Mon, Oct 26",
+   "taps": 5
+  },
+  {
+   "s": "session",
+   "w": 64,
+   "h": "Sit-to-stand from a chair",
+   "taps": 0
+  }
+ ]
+}

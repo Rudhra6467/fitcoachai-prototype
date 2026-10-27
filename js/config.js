@@ -39,7 +39,11 @@ const FC_CONFIG={
   restSec:{standard:30,gentle:45},                   // R12
   hkShortSleepHours:6,                               // R13
   learnedNudgeDefault:'18:00',                       // R14
-  proposeShorterIfActualBelow:0.7                    // R15
+  proposeShorterIfActualBelow:0.7,                   // R15
+  // R16 weekly goal + streak definition (goal = the days/week the user chose; streak unit is a placeholder)
+  streakUnit:'weeks with at least one workout',
+  // R17 one-tap "I feel good" check-in = sleep good, energy good, no soreness, no pain (placeholder; is one tap enough?)
+  quickCheckin:{sleep:'good',energy:'high',soreness:'none',pain:'no'}
  }
 };
 if(typeof module!=='undefined'&&module.exports)module.exports=FC_CONFIG;else root.FC_CONFIG=FC_CONFIG;

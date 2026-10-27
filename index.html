@@ -164,7 +164,7 @@ function computeReadiness(){const p=P(),R={};PATTERNS.forEach(x=>R[x]={level:'no
  if(isYes(p.hs.h4))set('balance','notReady','because of dizziness or fainting on the health check');
  if(p.postpartumMode){set('core','gentle','postpartum: breathing and gentle core first');set('cardio','gentle','postpartum: no impact')}
  p.patternReadiness=R}
-function stepCount(){const o=['s3','s4','s5','s6','s7','s8','s9','s10','s11'];const i=o.indexOf(S.screen==='s7a'?'s7':S.screen);return i<0?null:i+1}
+function stepCount(){const o=['s3','s4','s5','s6','s7','s8','s9','s10'];const i=o.indexOf(S.screen==='s7a'?'s7':S.screen);return i<0?null:i+1}
 
 /* ===== Navigation ===== */
 function go(scr,push){if(push!==false&&S.screen!==scr)S.hist.push(S.screen);S.screen=scr;logEv('screen_view',{screen:scr});save();render();{const a=document.getElementById('app');a.classList.remove('enter');void a.offsetWidth;a.classList.add('enter')}document.getElementById('app').scrollTop=0;window.scrollTo(0,0)}
@@ -173,8 +173,8 @@ function hardStop(reason){S.stopReason=reason;P().safetyMode='paused';logEv('har
 function weeksSince(month){if(!month)return null;const [y,m]=month.split('-').map(Number);if(!y||!m)return null;return (appNow()-new Date(y,m-1,15))/6048e5}
 function next(){const p=P(),s=S.screen;let t=null;
  switch(s){
- case 's1':if(!p.disclaimerAccepted)return;p.disclaimerAcceptedAt=p.disclaimerAcceptedAt||nowISO();p.onboardingStartedAt=p.onboardingStartedAt||nowISO();logEv('disclaimer_accepted',{version:p.disclaimerVersion});t='s2';break;
- case 's2':p.privacyNoticeShownAt=nowISO();t='s3';break;
+ case 's1':if(!p.disclaimerAccepted)return;p.disclaimerAcceptedAt=p.disclaimerAcceptedAt||nowISO();p.onboardingStartedAt=p.onboardingStartedAt||nowISO();logEv('disclaimer_accepted',{version:p.disclaimerVersion});p.privacyNoticeShownAt=p.privacyNoticeShownAt||nowISO();t='s3';break;
+ case 's2':p.privacyNoticeShownAt=nowISO();save();return back();
  case 's3':if(!p.ageRange||!p.sexForReference)return toast('Please answer both questions.');if(p.ageRange==='under18')return hardStop('under18');t='s4';break;
  case 's4':p.goalSetAt=nowISO();t='s5';break;
  case 's5':if(!p.experience)return toast('Please pick one.');t='s6';break;
@@ -197,7 +197,7 @@ function next(){const p=P(),s=S.screen;let t=null;
  case 's9':p.equipmentAnsweredAt=nowISO();t='s10';break;
  case 's10':{const d=p.days==='6'?6:Number(p.days);computeSafety();
   if(d>=5&&(['new','lapsed'].includes(p.experience)||gentleMode())&&!S._daysAsked){S._daysAsked=true;return openSheet(`<h2>Starting with 3 days usually works better — want to start there?</h2><button class="btn" onclick="P().days='3';P().keepExtraLight=false;closeSheet();next()">Start with 3</button><button class="btn sec" onclick="P().keepExtraLight=true;closeSheet();next()">Keep my choice</button><p class="mut sm">If you keep it, the extra days become light / mobility days.</p>`)}
-  p.scheduleAnsweredAt=nowISO();t='s11';break}
+  p.scheduleAnsweredAt=nowISO();t='s13';break}
  case 's11':if(p.nudgeMode==='fixedTime'&&!p.nudgeTime)return toast('Pick a time.');t='s12';break;
  case 's12':t='s13';break;
  case 's13':computeSafety();computeReadiness();p.onboardingCompletedAt=nowISO();const snap=JSON.parse(JSON.stringify(p));delete snap.profileSnapshot;p.profileSnapshot=snap;logEv('onboarding_completed',{safetyMode:p.safetyMode,reasons:p.safetyModeReasons});t='s14';break;
@@ -214,6 +214,7 @@ SC.s1=()=>`<h1>Hi, I'm your FitcoachAI coach.</h1>
 <p>First, a few quick questions (about 3 minutes). Then we'll do a short, gentle check-in workout so I can see where you're starting. Over the next week, I'll keep learning what works for you.</p>
 <p><b>One important thing:</b></p>${safe('REF')}
 <p>I can't promise specific results. What I can do is help you move safely and keep showing up.</p>
+<p class="sm mut">🔒 No account. Your answers and workouts stay on this device. You can delete everything any time in Settings. <a href="#" onclick="go('s2');return false">More about privacy</a></p>
 <label class="chk"><input id="ack" type="checkbox" ${P().disclaimerAccepted?'checked':''} onchange="P().disclaimerAccepted=this.checked;save();render()" aria-label="I understand that FitcoachAI is for reference only and isn't medical advice. ${esc(SAFE.REF)}"> I understand that FitcoachAI is for reference only and isn't medical advice.</label>
 <button class="btn" id="next" ${P().disclaimerAccepted?'':'disabled'} onclick="next()">Let's get started</button>`;
 SC.s2=()=>`<h1>Your data stays on your phone.</h1><ul>
@@ -568,8 +569,8 @@ const RMUS={neck:'upper_back',upperBack:'upper_back,lats',lowerBack:'lower_back'
 function areaGroups(){return [...new Set(P().bodyAreas.flatMap(a=>(RMUS[a.region]||'').split(',').filter(Boolean)))].join(',')}
 function render(){_render();try{window.dispatchEvent(new Event('fc-render'))}catch(e){}}
 function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementById('app');el.innerHTML=SC[S.screen]();
- const st=stepCount(),canBack=S.hist.length&&!['baseline','results'].includes(S.screen);
- document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="9" aria-valuenow="${st}"><i style="width:${st/9*100}%"></i></div><span class="steptxt">Step ${st} of 9</span>`:'<span style="flex:1"></span>'}`;
+ const st=stepCount(),canBack=S.hist.length&&!['baseline','results','session','sessionDone'].includes(S.screen);
+ document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="${st}"><i style="width:${st/8*100}%"></i></div><span class="steptxt">Step ${st} of 8</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
 <script src="js/config.js"></script>
