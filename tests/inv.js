@@ -1,6 +1,6 @@
 // Domain invariants, run inside the real page via Playwright (engine + config loaded by index.html).
 const {chromium}=require('playwright-core');const URL=process.argv[2]||'http://127.0.0.1:8765/';
-(async()=>{const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox']});const pg=await br.newPage();const errs=[];
+(async()=>{const br=await require('./launch.js')();const pg=await br.newPage();const errs=[];
  pg.on('pageerror',e=>errs.push(String(e)));pg.on('console',m=>{if(m.type()==='error')errs.push(m.text())});await pg.goto(URL);
  const out=await pg.evaluate(()=>{const R=[];const ok=(c,m)=>R.push([!!c,m]);const D=864e5,T0=Date.parse('2026-01-05T12:00:00Z'),at=d=>new Date(T0+d*D).toISOString();
   const base=(st='ready',inj=false)=>ENG.init({nowISO:at(0),gentle:false,patterns:Object.fromEntries(ENG.PATS.map(p=>[p,{status:st,lvl:0,kind:'reps',injury:inj,baseline:true}]))});

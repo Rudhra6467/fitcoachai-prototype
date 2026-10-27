@@ -78,7 +78,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.5.2"></script>
+<script src="js/config.js?v=0.6.0"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -114,13 +114,15 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=2,APPVER='0.5.2';
+const SCHEMA=3,APPVER='0.6.0';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
  o.p.hs=Object.assign({},f.p.hs,o.p.hs||{});o.p.postpartum=Object.assign({},f.p.postpartum,o.p.postpartum||{});
  ['bodyAreas','movementNeeds','limbDifference','availableItems','baselineResults'].forEach(k=>{if(!Array.isArray(o.p[k]))o.p[k]=[]});
  if(!Array.isArray(o.hist))o.hist=[];if(o.p.eng&&!Array.isArray(o.p.sessions))o.p.sessions=[];
+ /* v3 (v0.6): calibration state; existing users keep their data (never deleted) */
+ if(o.p.eng&&!o.p.calib)o.p.calib={startedAt:o.p.planStartedAt||o.p.eng.startedAt||null,completedAt:null,migrated:true};
  if(from<SCHEMA){o.migratedFrom=from;o.schemaVersion=SCHEMA;o._justMigrated=true}return o}
 let S=migrateState(lsGet(KP))||freshState();S.schemaVersion=SCHEMA;
 if(S._justMigrated){delete S._justMigrated;setTimeout(()=>{logEv('storage_migrated',{from:S.migratedFrom,to:SCHEMA});save()},0)}
@@ -477,7 +479,7 @@ function doLater(){const p=P();p.baselineDeferred=true;p.baselineResults=[];p.ba
 // Rough "good count" thresholds — only used to decide a one-step-up and to word feedback; never a grade.
 function goodThreshold(pat){const p=P();let v={squat:12,push:15,hinge:15,core:25,balance:15}[pat]||99;if(['r60_69','r70plus'].includes(p.ageRange))v=Math.round(v*0.8);if(p.sexForReference==='female'&&pat==='push')v-=3;return v}
 function scoreResults(results){computeReadiness();const R=JSON.parse(JSON.stringify(P().patternReadiness)),g=gentleMode();
- results.forEach(r=>{const pat=r.pattern,prior=R[pat];let lvl,step=false,note;
+ results.forEach(r=>{const pat=r.pattern,prior=R[pat]||(R[pat]={level:'notAssessed'});let lvl,step=false,note;
   if(r.skippedByUser){R[pat]=Object.assign(prior,{level:prior.level==='notReady'?'notReady':'notAssessed',note:"You skipped this one — that's fine. It stays \"not assessed\" and starts at the easiest version.",result:r});return}
   const val=r.reps!=null?r.reps:r.holdSec,unit=r.reps!=null?'reps':'seconds';
   if(r.pain){lvl='notReady';note=`You felt pain${r.painRegion?' in your '+REGIONS[r.painRegion]:''}, so this movement is out of your plan for now. It comes back step by step only after 3 pain-free sessions over at least 7 days per step.`}
@@ -591,9 +593,10 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  document.getElementById('top').innerHTML=`${canBack?'<button class="back" id="backBtn" onclick="back()" aria-label="Back">‹ Back</button>':'<span style="width:44px"></span>'}${st?`<div class="prog" role="progressbar" aria-valuemin="1" aria-valuemax="8" aria-valuenow="${st}"><i style="width:${st/8*100}%"></i></div><span class="steptxt">Step ${st} of 8</span>`:'<span style="flex:1"></span>'}`;
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.5.2"></script>
-<script src="js/app.js?v=0.5.2"></script>
-<script src="js/v05.js?v=0.5.2"></script>
+<script src="js/engine.js?v=0.6.0"></script>
+<script src="js/app.js?v=0.6.0"></script>
+<script src="js/v05.js?v=0.6.0"></script>
+<script src="js/v06.js?v=0.6.0"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};

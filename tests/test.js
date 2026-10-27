@@ -4,7 +4,7 @@ const fakeSR=`window.__heard=[];class FakeSR{constructor(){window.__rec=this}sta
 window.say=(t)=>{const r=window.__recActive;if(r&&r.onresult)r.onresult({resultIndex:0,results:[[{transcript:t}]]})};
 window.webkitSpeechRecognition=FakeSR;window.SpeechRecognition=FakeSR;`;
 const noSR=`delete window.webkitSpeechRecognition;window.webkitSpeechRecognition=undefined;window.SpeechRecognition=undefined;`;
-(async()=>{const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+(async()=>{const br=await require('./launch.js')();
  let fails=0;const check=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++};
  async function newPage(init){const ctx=await br.newContext({viewport:{width:390,height:844}});if(init)await ctx.addInitScript(init);const pg=await ctx.newPage();const errs=[];
   pg.on('console',m=>{if(m.type()==='error')errs.push(m.text())});pg.on('pageerror',e=>errs.push(String(e)));pg.on('dialog',d=>d.accept());await pg.goto(URL);return{pg,errs,ctx}}

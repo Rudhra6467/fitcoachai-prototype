@@ -11,7 +11,9 @@ const FC_CONFIG={
   badDayLowersLevel:false,         // one bad day never lowers a level
   injuryGatePainFreeSessions:3,    // OQ-8: 3 pain-free sessions...
   injuryGateMinDays:7,             // ...over at least 7 days, per readiness step
-  calibrationFloorDays:7,          // soft 7-day floor (spec §4)
+  // v0.6: the 7-day calibration floor is retired. Calibration ends on data quality, never on time (CORE-PRODUCT-LOGICS §3).
+  startEveryoneAsBeginner:true,    // CORE-PRODUCT-LOGICS §2; experience answer only sets coaching tone
+  maxLevelChangePerStep:1,         // CORE-PRODUCT-LOGICS §4: intensity changes at most +/-1 level
   rescreenDays:90,                 // OQ-14
   maxNudgesPerDay:1                // S11: at most 1 nudge a day
  },
@@ -30,7 +32,7 @@ const FC_CONFIG={
   plateauSessions:4,                                 // R6
   plateauOrder:['PLATEAU_TEMPO','PLATEAU_ADD_SET','PLATEAU_VARIANT_OFFER','PLATEAU_DELOAD_SUGGEST'], // R6
   gentleMaxLevel:1,gentleMinDaysBetweenSteps:7,      // R7
-  calibrationObsPerPattern:3,                        // R8
+  calibrationObsPerPattern:3,                        // R8 (superseded in v0.6 by R19; kept for reference)
   scoreCeilingByTier:{0:60,1:70,2:80,3:90,4:100},    // R9
   scoreHardEffortFactor:0.85,scoreUnknownPenalty:10,scoreMinCeiling:50, // R9
   triageShortIf:{sleep:['poor'],energy:['low'],soreness:['lot']},   // R10
@@ -45,7 +47,24 @@ const FC_CONFIG={
   // R17 one-tap "I feel good" check-in = sleep good, energy good, no soreness, no pain (placeholder; is one tap enough?)
   quickCheckin:{sleep:'good',energy:'high',soreness:'none',pain:'no'},
   // R18 defaults used because onboarding now skips the tone/reminder/Health screens (placeholder; needs approval)
-  onboardingDefaults:{coachingStyle:'calm',voiceCoaching:true,nudgeMode:'learned',healthKit:null}
+  onboardingDefaults:{coachingStyle:'calm',voiceCoaching:true,nudgeMode:'learned',healthKit:null},
+  // ---- v0.6 calibration phase (all PLACEHOLDER — RESEARCH NEEDED) ----
+  // R19 when calibration can end: enough quality sessions AND enough movement patterns seen consistently
+  calibration:{minSessions:6,minPatterns:3,minSessionsPerPattern:2,maxRatioSpread:0.35},
+  // R20 starting (beginner) ladder step per pattern; core starts at the wall plank unless postpartum (heel slides)
+  beginnerLevel:{squat:0,push:0,hinge:0,core:1,balance:0,cardio:0},
+  // R21 Performance Score = weighted mix (placeholder weights); adherence on an unplanned day
+  performanceScore:{weights:{completion:0.4,volume:0.4,adherence:0.2},adherenceUnplannedDay:0.75},
+  // R22 set timing: average seconds per rep below this reads as "finished fast" (copy only; never changes the dose)
+  fastSecPerRep:2,
+  // R23 post-session check-in effects: pain + area -> those patterns go on hold (same as R11); effort and energy are recorded only
+  postCheckPainMarksPatternNotReady:true,
+  // R24 experience answer -> coaching tone copy only (never difficulty)
+  experienceTone:{
+   new:"We'll start easy and build from what you actually do.",
+   lapsed:"Welcome back. We'll start easy and build from what you actually do.",
+   occasional:"Everyone starts at the beginner level. If it feels easy, your sessions will show it and we'll move up a step at a time.",
+   regular:"Everyone starts at the beginner level, even regulars. If it's easy, your sessions will show it and we'll move up a step at a time."}
  }
 };
 if(typeof module!=='undefined'&&module.exports)module.exports=FC_CONFIG;else root.FC_CONFIG=FC_CONFIG;

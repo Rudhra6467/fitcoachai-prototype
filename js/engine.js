@@ -4,6 +4,9 @@
 'use strict';
 const CFG=(typeof module!=='undefined'&&module.exports)?require('./config.js'):root.FC_CONFIG;
 const A=CFG.APPROVED,X=CFG.RESEARCH_NEEDED;
+// safe defaults if a stale config.js is served (same values as js/config.js; placeholders R19/R21)
+if(!X.calibration)X.calibration={minSessions:6,minPatterns:3,minSessionsPerPattern:2,maxRatioSpread:0.35};
+if(!X.performanceScore)X.performanceScore={weights:{completion:0.4,volume:0.4,adherence:0.2},adherenceUnplannedDay:0.75};
 const PATS=['squat','push','hinge','core','balance','cardio'];
 const DAY=864e5,MAXLVL=X.ladderLevels-1,GCAP=X.gentleMaxLevel;
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -64,7 +67,7 @@ function applySession(e0,s,ctx){ctx=ctx||{};const e=clone(e0);e.sessionCount++;c
  (s.results||[]).forEach(r=>{const p=r.pattern,ps=e.patterns[p];if(!ps)return;
   if(r.skipped){d('SKIPPED',p);return}
   const [lo,hi]=rg(ps,ctx);ps.target=Math.min(hi,Math.max(lo,ps.target));
-  ps.obs.push({at,lvl:r.lvl,sets:r.sets,effort:r.effort||null,pain:!!r.pain,triage:s.triage||'full'});
+  ps.obs.push({at,lvl:r.lvl,tgt:ps.target,sets:r.sets,effort:r.effort||null,pain:!!r.pain,triage:s.triage||'full'});
   if(r.pain){ps.status='notReady';ps.injury=true;ps.painFree=[];ps.pendingVerify=false;ps.clean=0;ps.flat=0;d('PAIN_STOP_PATTERN',p);return}
   if(s.triage==='short'){d('TRIAGE_NO_PROGRESS',p);return}
   const sets=r.sets||[],known=sets.length>0&&sets.every(x=>x!=null&&isFinite(x));
@@ -110,16 +113,41 @@ function tighten(e0,want,atISO){const e=clone(e0),D=[];
   if(w==='notReady'&&ps.status!=='notReady'){ps.status='notReady';ps.injury=true;ps.painFree=[];ps.pendingVerify=false;D.push({code:'INJURY_REPORTED',pattern:p,msg:MSG.INJURY_REPORTED,at:atISO,session:e.sessionCount})}
   else if(w==='gentle'&&['ready','progressing','notAssessed'].includes(ps.status)){ps.status='gentle';ps.injury=true;ps.lvl=0;ps.pendingVerify=false;ps.painFree=[];D.push({code:'INJURY_CARE',pattern:p,msg:MSG.INJURY_CARE,at:atISO,session:e.sessionCount})}});
  e.decisions=e.decisions.concat(D);return {eng:e,decisions:D}}
-function fullObs(ps){return ps.obs.filter(o=>o.triage==='full'&&!o.pain&&(o.sets||[]).length&&o.sets.every(x=>x!=null)).length}
-function calibration(e,nowISO){const elapsed=Math.max(0,Math.floor((ms(nowISO)-ms(e.startedAt))/DAY));
- const per={};PATS.forEach(p=>{const ps=e.patterns[p];const n=fullObs(ps);per[p]={obs:n,need:X.calibrationObsPerPattern,personalized:elapsed>=A.calibrationFloorDays&&n>=X.calibrationObsPerPattern,included:ps.status!=='notReady'}});
- const inc=PATS.filter(p=>per[p].included);const done=inc.length?inc.filter(p=>per[p].personalized).length:0;
- return {elapsed,day:elapsed+1,floorMet:elapsed>=A.calibrationFloorDays,per,complete:elapsed>=A.calibrationFloorDays&&inc.length>0&&done===inc.length,pct:Math.round(100*Math.min(1,(Math.min(elapsed,A.calibrationFloorDays)/A.calibrationFloorDays+(inc.length?inc.reduce((a,p)=>a+Math.min(X.calibrationObsPerPattern,per[p].obs)/X.calibrationObsPerPattern,0)/inc.length:0))/2))}}
+function fullList(ps){return ps.obs.filter(o=>o.triage==='full'&&!o.pain&&(o.sets||[]).length&&o.sets.every(x=>x!=null&&isFinite(x)))}
+function fullObs(ps){return fullList(ps).length}
+/* v0.6 calibration: data-quality driven, never time-driven (CORE PRODUCT LOGICS §3). Thresholds: R19 (placeholders).
+   A "quality session" = a session with at least one fully counted, pain-free, full-version exercise.
+   A pattern is "confident" with >= minSessionsPerPattern quality observations whose last two volume ratios agree. */
+function ratio(o){const avg=o.sets.reduce((a,b)=>a+b,0)/o.sets.length;return o.tgt?avg/o.tgt:null}
+function calibration(e,nowISO){const C=X.calibration,elapsed=Math.max(0,Math.floor((ms(nowISO)-ms(e.startedAt))/DAY));
+ const per={},dates=new Set();
+ PATS.forEach(p=>{const ps=e.patterns[p],L=fullList(ps);L.forEach(o=>dates.add(o.at));
+  const r=L.slice(-2).map(ratio).filter(x=>x!=null);let spread=null,consistent=true;
+  if(r.length===2){spread=Math.round(Math.abs(r[0]-r[1])*100)/100;consistent=spread<=C.maxRatioSpread}
+  const included=ps.status!=='notReady';
+  per[p]={obs:L.length,need:C.minSessionsPerPattern,spread,consistent,included,personalized:included&&L.length>=C.minSessionsPerPattern&&consistent}});
+ const inc=PATS.filter(p=>per[p].included),sessions=dates.size,needPatterns=Math.min(C.minPatterns,inc.length);
+ const confident=inc.filter(p=>per[p].personalized),covered=PATS.filter(p=>per[p].obs>0);
+ const complete=sessions>=C.minSessions&&needPatterns>0&&confident.length>=needPatterns;
+ const extending=!complete&&sessions>=C.minSessions;
+ const inconsistent=inc.filter(p=>per[p].obs>=C.minSessionsPerPattern&&!per[p].consistent),thin=inc.filter(p=>per[p].obs<C.minSessionsPerPattern);
+ const pct=complete?100:Math.round(100*Math.min(0.97,(Math.min(sessions,C.minSessions)/C.minSessions+(needPatterns?Math.min(confident.length,needPatterns)/needPatterns:0))/2));
+ return {elapsed,day:elapsed+1,sessions,needSessions:C.minSessions,needPatterns,confident,covered,inconsistent,thin,per,complete,extending,floorMet:complete,pct}}
 function tier(e,p,nowISO){const ps=e.patterns[p],n=fullObs(ps),c=calibration(e,nowISO);
  if(!n)return ps.baseline&&ps.status!=='notAssessed'?{t:1,label:'Baseline only',conf:'Low'}:{t:0,label:'Unknown',conf:'None yet'};
- if(n<X.calibrationObsPerPattern)return {t:2,label:'Early',conf:'Low'};
- if(!c.floorMet)return {t:3,label:'Building',conf:'Medium'};
+ if(n<X.calibration.minSessionsPerPattern)return {t:2,label:'Early',conf:'Low'};
+ if(!c.complete||!c.per[p].consistent)return {t:3,label:'Building',conf:'Medium'};
  return {t:4,label:'Personalized',conf:'High'}}
+/* v0.6 Performance Score — R21 PLACEHOLDER formula: weighted mix of completion, volume ratio and adherence.
+   Pain-stopped exercises are left out (never penalise stopping for pain). Unknown counts leave volume out. */
+function perfScore(rx,results,o){o=o||{};const W=X.performanceScore.weights;let planned=0,done=0,vs=[];
+ rx.forEach(x=>{const r=results.find(q=>q.pattern===x.pattern);if(r&&r.pain)return;planned++;if(!r||r.skipped)return;
+  const sets=r.sets||[];if(!sets.length)return;done++;if(sets.every(v=>v!=null&&isFinite(v)))vs.push(Math.min(1,sets.reduce((a,b)=>a+b,0)/(x.sets*x.target)))});
+ if(!planned)return {score:null,parts:null,why:'Not enough data to score this session.'};
+ const parts={completion:done/planned,volume:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null,adherence:o.plannedDay===false?X.performanceScore.adherenceUnplannedDay:1};
+ let sw=0,sum=0;Object.keys(W).forEach(k=>{if(parts[k]==null)return;sw+=W[k];sum+=W[k]*parts[k]});
+ const score=Math.round(100*sum/sw);
+ return {score,parts,weights:W,formula:'R21-placeholder',why:'How much of today\'s plan you did, how close you got to the target, and whether it was a planned day.'}}
 function tolerance(ps){const r=ps.obs.slice(-3);if(!r.length)return 'Unknown';if(r.some(o=>o.pain))return 'Needs care';if(r.filter(o=>o.effort==='hard').length>=2)return 'Finding it tough';return 'Handling it well'}
 const CEIL=X.scoreCeilingByTier;
 /* Score = share of today's prescription actually done. Evidence ceiling; no floor for just showing up. */
@@ -131,6 +159,6 @@ function score(rx,results,e,nowISO){let sum=0,cnt=0,unknown=0,minT=4;
  if(!cnt)return {score:null,ceiling:null,why:'Not enough data to score this session.'};
  const ceiling=Math.max(X.scoreMinCeiling,CEIL[minT]-X.scoreUnknownPenalty*unknown),raw=Math.round(100*sum/cnt);
  return {score:Math.min(raw,ceiling),raw,ceiling,why:raw>ceiling?`Capped at ${ceiling} until we've seen more sessions.`:`Max right now: ${ceiling} (rises as we learn more).`}}
-const API={CFG,PATS,MSG,range,init,prescribe,applySession,tighten,calibration,tier,tolerance,score,GCAP,MAXLVL};
+const API={CFG,PATS,MSG,range,init,prescribe,applySession,tighten,calibration,tier,tolerance,score,perfScore,GCAP,MAXLVL};
 if(typeof module!=='undefined'&&module.exports)module.exports=API;else root.ENG=API;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,7 +1,7 @@
 const {chromium}=require('playwright-core');const fs=require('fs');const BASE=(process.argv[2]||'http://127.0.0.1:8765/');
 const fakeSR=fs.readFileSync(__dirname+'/ui.js','utf8').split('\n')[1].replace(/^const fakeSR=`/,'').replace(/`;\s*$/,'');
 const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
-(async()=>{const br=await chromium.launch({executablePath:'/usr/bin/google-chrome',args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist']});
+(async()=>{const br=await require('./launch.js')();
  let fails=0;const check=(c,m)=>{console.log((c?'PASS ':'FAIL ')+m);if(!c)fails++};const errs=[];
  async function mk(o={}){const ctx=await br.newContext({viewport:{width:390,height:844},acceptDownloads:true,...(o.ua?{userAgent:o.ua}:{})});await ctx.addInitScript(fakeSR);const pg=await ctx.newPage();
   pg.on('console',m=>{if(m.type()==='error'&&!(o.offline&&/ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(m.text())))errs.push(m.text())});pg.on('pageerror',e=>errs.push(String(e)));pg.on('dialog',d=>d.accept());
@@ -44,12 +44,12 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
  await pg.reload();await w(300);check(await has('#resumeW')&&await pg.evaluate(()=>!!W&&S.screen==='session'),'reload mid-workout -> paused workout restored from localStorage');
  await ck('#resumeW');await ck('#done');check(await has('[data-n]')&&await has('#stopSession'),'session "how many" screen has Stop workout');
  await pg.click('[data-n]');check(await has('[data-effort]')?await has('#stopSession'):true,'effort screen has Stop workout (if reached)');
- await ck('#stopSession');await w(100);check(await has('#backToday')&&(await pg.textContent('#app')).includes(STOPTXT),'Stop workout -> done screen shows verbatim STOP wording');
+ await ck('#stopSession');await w(100);check(await has('#postDone')&&(await pg.textContent('#app')).includes(STOPTXT),'Stop -> post check-in shows verbatim STOP wording');await pg.click('[data-pc="pain"][data-v="no"]');await pg.click('[data-pc="energy"][data-v="ok"]');await ck('#postDone');check(await has('#backToday')&&(await pg.textContent('#app')).includes(STOPTXT),'Stop workout -> done screen shows verbatim STOP wording');
  check(await pg.evaluate(()=>!localStorage.fcai_proto_session_v1),'saved session cleared after stop');await ck('#backToday');
  // backup round trip
  await ck('#tab-settings');const fsz=await pg.$eval('#docDate',e=>parseFloat(getComputedStyle(e).fontSize)).catch(()=>16);check(fsz>=16,'inputs are 16px (no iOS zoom): '+fsz);
  const [dl]=await Promise.all([pg.waitForEvent('download'),ck('#exportBtn')]);const bj=JSON.parse(fs.readFileSync(await dl.path(),'utf8'));
- check(bj.app==='FitcoachAI'&&bj.schemaVersion===2&&bj.state.p.sessions.length>=1,'export has app, schemaVersion, sessions');
+ check(bj.app==='FitcoachAI'&&bj.schemaVersion===3&&bj.state.p.sessions.length>=1,'export has app, schemaVersion, sessions');
  const before=await pg.evaluate(()=>({n:P().sessions.length,ev:JSON.parse(localStorage.fcai_proto_log_v1).length}));
  const bad=await pg.evaluate(()=>[importBackupText('nope',true),importBackupText('{"x":1}',true),importBackupText(JSON.stringify({app:'Other',state:{}}),true),importBackupText(JSON.stringify({schemaVersion:99,state:{screen:'today',p:{disclaimerAccepted:true}}}),true)].map(r=>r.ok));
  check(bad.every(x=>x===false),'invalid backups rejected (bad JSON, wrong shape, other app, newer schema)');
@@ -61,7 +61,7 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
  const old=JSON.parse(JSON.stringify(bj.state));delete old.schemaVersion;delete old.hist;delete old.p.postpartum;delete old.p.hs.h6;delete old.p.limbDifference;delete old.p.nudgeTime;
  await pg.evaluate(o=>{localStorage.setItem('fcai_proto_state_v1',JSON.stringify(o))},old);await pg.reload();await w(400);
  const mg=await pg.evaluate(()=>({v:S.schemaVersion,f:S.migratedFrom,pp:!!P().postpartum,ld:Array.isArray(P().limbDifference),nt:P().nudgeTime,h:Array.isArray(S.hist),ev:JSON.parse(localStorage.fcai_proto_log_v1).some(e=>e.type==='storage_migrated'),stored:JSON.parse(localStorage.fcai_proto_state_v1).schemaVersion}));
- check(mg.v===2&&mg.f===1&&mg.pp&&mg.ld&&mg.nt&&mg.h&&mg.ev&&mg.stored===2&&await has('#tab-today'),'v0.4 data migrates to schema 2 and app opens '+JSON.stringify(mg));
+ check(mg.v===3&&mg.f===1&&mg.pp&&mg.ld&&mg.nt&&mg.h&&mg.ev&&mg.stored===3&&await has('#tab-today'),'v0.4 data migrates to schema 3 and app opens '+JSON.stringify(mg));
  await pg.evaluate(()=>updateBanner({waiting:null}));check(await has('#updBtn'),'update prompt renders');await t.ctx.close();
 
  // ---- C: offline after first load (service worker)
@@ -69,7 +69,7 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
   const sw=await pg.evaluate(async()=>{const r=await navigator.serviceWorker.ready;for(let i=0;i<60&&!navigator.serviceWorker.controller;i++)await new Promise(z=>setTimeout(z,250));
    const ks=await caches.keys(),c=await caches.open(ks.find(k=>k.startsWith('fcai-')));const keys=(await c.keys()).map(r=>r.url);
    return {active:!!r.active,ctl:!!navigator.serviceWorker.controller,ks,glb:keys.some(u=>u.endsWith('Xbot.glb')),three:keys.some(u=>u.includes('three.module.js')),gltf:keys.some(u=>u.includes('GLTFLoader.js')),n:keys.length}});
-  check(sw.active&&sw.ctl&&sw.ks.some(k=>/^fcai-v0\.5/.test(k)),'service worker active, versioned cache '+JSON.stringify(sw.ks));
+  check(sw.active&&sw.ctl&&sw.ks.some(k=>/^fcai-v0\.6/.test(k)),'service worker active, versioned cache '+JSON.stringify(sw.ks));
   check(sw.glb&&sw.three&&sw.gltf,'cache holds Xbot.glb + three.js CDN modules ('+sw.n+' files)');
   await ctx.setOffline(true);await pg.reload();await w(2500);
   check((await pg.textContent('#app')).includes("FitcoachAI coach")&&await has('#ack'),'offline reload: app loads');
