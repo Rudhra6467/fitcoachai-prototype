@@ -1,4 +1,4 @@
-# FitcoachAI — Audit handoff (prototype v0.9.1)
+# FitcoachAI — Audit handoff (prototype v0.9.2)
 
 For: co-founder review and an AI-assisted audit (Claude). Date: October 27, 2026.
 
@@ -37,7 +37,8 @@ From `README.md` → Changelog and `git log`:
 | v0.7.2 | `8958a16` | Polish: coach auto-framing, runtime palette tint, ground shadow, loading placeholder, fade-in, failure fallback, reduced motion; caption bar no longer hides Stop on iPhone SE; small layout fixes. Lighthouse numbers in UX-AUDIT.md. |
 | v0.8.0 | `01d9eb7` | Sit-to-stand 3D demo (CC0 Quaternius `Sitting_Exit`/`Sitting_Enter` on a simple chair) on the intro and active screens of the 3 sit-to-stand steps. No other exercise has an honest CC0 clip, so they are listed as X9. Model 502 KB. |
 | v0.9.0 | `5301692` | Decision Round 1 applied: 35 approved values moved to `FC_CONFIG.APPROVED`, 9 items deferred; placeholder labels removed; R12 +15 s rest button; R25 repeat-skip note; OQ-18 health copy; OQ-1a interim C-section line; `R21-placeholder` → `R21` migration. |
-| v0.9.1 | (this release) | Pre-native review (`docs/PRE-NATIVE-REVIEW.md`): doc drift fixed (retired 7-day floor, test lists, stale placeholder sections), Health screen shows only the approved read types, "Delete my data" button matches the privacy copy, removed/updated body areas kept in `bodyAreaHistory`. Decision Round 2 opened for the product conflicts with the locked doc. |
+| v0.9.1 | `2235d65` | Pre-native review (`docs/PRE-NATIVE-REVIEW.md`): doc drift fixed (retired 7-day floor, test lists, stale placeholder sections), Health screen shows only the approved read types, "Delete my data" button matches the privacy copy, removed/updated body areas kept in `bodyAreaHistory`. Decision Round 2 opened for the product conflicts with the locked doc. |
+| v0.9.2 | (this release) | Decision Round 2 applied: amendments A1–A5 to the locked doc (`docs/CORE-PRODUCT-LOGICS-AMENDMENTS.md`); ability summary; "Something else" counter-offer after calibration; accept note; Easier/Harder ±1 during calibration (`js/v092.js`). |
 
 ## 3. How it was built
 
@@ -51,7 +52,7 @@ From `README.md` → Changelog and `git log`:
 - A vanilla JS PWA with no build step. Classic scripts share globals and load in this order: inline script in `index.html` (onboarding, health check, baseline, storage, migration) → `js/config.js` → `js/engine.js` → `js/app.js` → `js/v05.js` → `js/v06.js` → `js/v07.js`.
 - Later version files are **override layers**: they wrap or replace earlier functions and screens (`SC.<screen>`). `js/v07.js` runs the boot and the first full render. Some v0.6 overrides were folded back into the base files in v0.7.
 - `js/engine.js` is **pure**: no clock, no randomness, and no DOM (checked by `tests/inv.js`). It also loads in Node.
-- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.9.1`) that precaches the app, three.js and the 3D model.
+- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.9.2`) that precaches the app, three.js and the 3D model.
 
 ### File map
 | Path | Role |
@@ -93,7 +94,7 @@ export NODE_PATH=$(npm root -g)
 node tests/v07.js http://localhost:8765/
 BROWSER=webkit node tests/v07.js http://localhost:8765/   # WebKit; WEBKIT_PATH overrides the binary (tests/launch.js)
 ```
-Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v080.js` (sit-to-stand demo), `v090.js` (Decision Round 1), `v091.js` (pre-native fixes), `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4), `v072.js` (3D coach reduced motion / fit / fallback, caption bar vs Stop). At v0.9.1 all 11 suites pass on Chromium and WebKit (see README for the runner).
+Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v080.js` (sit-to-stand demo), `v090.js` (Decision Round 1), `v091.js` (pre-native fixes), `v092.js` (Decision Round 2), `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4), `v072.js` (3D coach reduced motion / fit / fallback, caption bar vs Stop). At v0.9.2 all 12 suites pass on Chromium and WebKit (see README for the runner).
 
 ### Developer tools (`?dev=1`)
 On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (synthetic workouts), **Auto-play 6 sessions** (clean or messy calibration), **Real date**, and **Fast timers**. Tap the version line in Settings for more. Simulated data is tagged in the log.
@@ -103,7 +104,7 @@ On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (syn
 ### Still open after Decision Round 1 (`RESEARCH-FLAGS.md`, `docs/DECISION-ROUND-1.md`)
 - **Deferred (9):** X6 injury-map physio review; X9 demo animation budget; R24 experience → tone; OQ-1a pelvic-floor physio review (interim C-section line shipped); OQ-5 legal/clinical wording review; OQ-15 regulatory review; OQ-11 backups (native build); OQ-12 first name (pilot); OQ-16 screen count (user testing).
 - **Approved but needing review before launch:** R7, OQ-17 (physio); R11, X2 (clinical); X8 (design); R17 (pilot comparison); OQ-13 (pilot measurement).
-- **Decision Round 2** (`docs/PRE-NATIVE-REVIEW.md`): conflicts between the locked CORE-PRODUCT-LOGICS doc and the prototype, to decide before the native build.
+- **Decision Round 2** (`docs/PRE-NATIVE-REVIEW.md`): all approved on 2026-10-27. The amendments to the locked doc are in `docs/CORE-PRODUCT-LOGICS-AMENDMENTS.md`, and the deferred parts are in RESEARCH-FLAGS (D2-2b, D2-4 legal, D2-6b/c, D2-9, D2-10b).
 
 ### Next steps
 - **Native SwiftUI app.** The prototype logic (engine, config, copy) is the reference to port. The web-specific parts (service worker, Safari workarounds, localStorage) do not carry over.
@@ -123,7 +124,7 @@ On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (syn
 6. A level never changes by more than 1 per session; one bad day never lowers a level; the injury gate requires 3 pain-free sessions over at least 7 days, with no instant clearance; gentle-mode caps hold; short, lighter and swapped sessions never move a level; the engine is pure.
 
 **P1 — Conformance with the locked doc**
-7. Compare `docs/CORE-PRODUCT-LOGICS.docx` and the APPROVED items against what the code does. Known conflicts are listed in `docs/PRE-NATIVE-REVIEW.md` (Decision Round 2).
+7. Compare `docs/CORE-PRODUCT-LOGICS.docx` and the APPROVED items against what the code does. Read it together with the approved amendments in `docs/CORE-PRODUCT-LOGICS-AMENDMENTS.md` (A1–A5).
 
 **P1 — Data integrity**
 8. `migrateState` handles schemas 1→4 without losing data; the event log is append-only; export and restore round-trip correctly; reload or resume mid-workout and mid-check-in works.

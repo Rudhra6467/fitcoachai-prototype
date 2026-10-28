@@ -88,7 +88,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.9.1"></script>
+<script src="js/config.js?v=0.9.2"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.APPROVED&&FC_CONFIG.APPROVED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -124,7 +124,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.9.1';
+const SCHEMA=4,APPVER='0.9.2';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -613,11 +613,12 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  if(!canBack&&!st)document.getElementById('top').innerHTML='';
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.9.1"></script>
-<script src="js/app.js?v=0.9.1"></script>
-<script src="js/v05.js?v=0.9.1"></script>
-<script src="js/v06.js?v=0.9.1"></script>
-<script src="js/v07.js?v=0.9.1"></script>
+<script src="js/engine.js?v=0.9.2"></script>
+<script src="js/app.js?v=0.9.2"></script>
+<script src="js/v05.js?v=0.9.2"></script>
+<script src="js/v06.js?v=0.9.2"></script>
+<script src="js/v07.js?v=0.9.2"></script>
+<script src="js/v092.js?v=0.9.2"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};

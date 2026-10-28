@@ -61,3 +61,17 @@ Changing a value only means editing the config; the engine reads its thresholds 
 | X9 — 🟠 OPEN — DEFERRED | Demo animations needed | 3D demo only for sit-to-stand (3 ladder steps). All others show text + muscle map: **squat** body-weight squat to a chair; **push** wall, counter, knee and floor push-up; **hinge** standing hip hinge to a wall, glute bridge, glute bridge with 2-second hold, single-leg glute bridge; **core** breathing + heel slides, forearm wall plank, forearm plank on knees, forearm plank, seated breathing + gentle belly brace; **balance** feet-together stand, supported single-leg stand, single-leg stand with fingertip support, single-leg stand with a reach; **cardio** easy march in place, march in place, brisk march with arm swings, step-backs + march; **seated** forward reach-and-return, chest press against a wall, forward lean & return, brace & breathe, seated reach, seated arm march | The free CC0 Quaternius packs (UAL 1 and 2, Standard) have no exercise clips. MakeHuman has CC0 *static* poses (e.g. push-up), not motion. Procedural keyframes were not attempted: wrong form in a demo is a safety risk | Commission or record CC0/owned clips (mocap or animator), reviewed by a coach/physio for form; check paid Quaternius tiers (CC0, 120+/130+ clips) for anything usable |
 
 > v0.7.2 note on X8: the mannequin is tinted toward the app palette at runtime (cloned materials). The CC0 GLB is unchanged; the look is still a placeholder.
+
+## Decision Round 2 (2026-10-27) — deferred parts
+
+Every Round 2 item was approved by the user on 2026-10-27 (`docs/PRE-NATIVE-REVIEW.md`). Changes to the locked doc are recorded in `docs/CORE-PRODUCT-LOGICS-AMENDMENTS.md` (A1–A5). Still open:
+
+| ID | What | Why deferred | Who / when |
+|---|---|---|---|
+| D2-2b | 15 named workout templates on top of the ladders | Content, not engine; only if marketing needs them | Content, pre-launch |
+| D2-4 legal | Final wording of the accept note (`modAcceptNote`) | Needs legal review; added to OQ-5 | Legal, pre-launch |
+| D2-6b | HRV / resting heart rate as readiness hints | Noisy wearable data; prove value first | After the pilot |
+| D2-6c | Workouts used as "recent load" | Real HealthKit only in the native build | Native build |
+| D2-9 | 7 engine modules (+ Calibration) | Native structure; prototype not refactored | Native build |
+| D2-10b | Repeated non-pain skips suggest a permanent swap | Needs pilot data to tune | After the pilot |
+

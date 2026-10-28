@@ -15,8 +15,8 @@ const fakeSR=`class FakeSR{start(){window.__recActive=this}abort(){}stop(){}}win
  while(await has('#startBtn')&&n<8){n++;await pg.evaluate(()=>say('go'));await pg.waitForTimeout(100);await pg.evaluate(()=>say('done'));await pg.waitForTimeout(100);
   if(await has('#talkYes'))await pg.evaluate(()=>say('yes'));else await pg.evaluate(()=>say('twelve'));await pg.waitForTimeout(80);await pg.evaluate(()=>say('okay'));await pg.waitForTimeout(80);await pg.evaluate(()=>say('no'));await pg.waitForTimeout(150);if(await has('#skipRest'))await ck('#skipRest');await pg.waitForTimeout(100)}
  const cf=await pg.evaluate(()=>({A:FC_CONFIG.APPROVED,v:APPVER}));
- check(cf.v==='0.9.1','APPVER 0.9.1');
- const sw=await (await pg.request.get(BASE+'sw.js')).text();check(sw.includes("fcai-v0.9.1"),'service worker cache fcai-v0.9.1');
+ check(/^0\.9\./.test(cf.v),'APPVER 0.9.x');
+ const sw=await (await pg.request.get(BASE+'sw.js')).text();check(/fcai-v0\.9\./.test(sw),'service worker cache fcai-v0.9.x');
  // Health screen: only the approved read types (OQ-18), no steps
  await pg.evaluate(()=>{P().hk={connected:true,simulated:true};go('health')});await pg.waitForTimeout(150);
  const hk=await pg.textContent('#app');check(hk.includes('Sleep')&&hk.includes('Workouts')&&!/Steps/.test(hk),'Health screen columns are sleep + workouts only (no steps)');

@@ -62,6 +62,10 @@ const FC_CONFIG={
   modReasons:['pain','fatigue','equipment','schedule','other'],
   modCounter:{pain:'none',fatigue:'short',equipment:'seated',schedule:'short',other:'none'},
   modReasonRequiredAfterCalibration:true,
+  // Decision Round 2 (approved 2026-10-27, user approval) — see docs/PRE-NATIVE-REVIEW.md
+  modCounterOtherAfterCalibration:'short',   // D2-3: "Something else" after calibration -> short-version counter-offer first (never a hard block; pain unchanged)
+  modAcceptNote:"Okay, it's your call. I can't promise the same progress when parts of the plan are skipped.", // D2-4 (copy pending OQ-5 legal review)
+  calibrationIntensityControl:true,          // D2-5: Easier / Harder, ±1 step per movement, once per movement per day, calibration only
   // R26 days-per-week suggestion: anyone choosing 5+ days is offered 3 to start (no longer tied to the experience answer)
   suggestThreeDaysFrom:5,
   skipNoteAfter:3,skipNoteWindowDays:14,             // R25: gentle note after 3 skips of the same movement in 14 days
