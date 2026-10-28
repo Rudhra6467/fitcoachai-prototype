@@ -1,6 +1,6 @@
 # Research flags — values NOT decided
 
-All of these are placeholders. They live in `js/config.js` → `FC_CONFIG.RESEARCH_NEEDED` (R1–R26), or in the code where noted (X1–X8). They are marked "RESEARCH NEEDED / not decided". The values that are approved are in `FC_CONFIG.APPROVED`:
+All of these are placeholders. They live in `js/config.js` → `FC_CONFIG.RESEARCH_NEEDED` (R1–R26), or in the code where noted (X1–X9). They are marked "RESEARCH NEEDED / not decided". The values that are approved are in `FC_CONFIG.APPROVED`:
 - 1 step-up per session
 - a bad day never lowers the level
 - the injury gate: 3 pain-free sessions over at least 7 days
@@ -46,5 +46,6 @@ Changing a placeholder only means editing the config. The engine reads every thr
 | X6 | Injury-flag heuristic when the plan starts | not-ready/gentle readiness from onboarding → injury gate | Mapping body areas to patterns needs clinical review | Physio review of REGION_LOAD / TRIG_MAP |
 | X7 | Reminder demo | 1/day (approved cap); the iOS web-push limits are explained | iOS needs Add to Home Screen (iOS 16.4+) for web push | Apple WebKit web-push documentation |
 | X8 | Look of the 3D coach | Quaternius CC0 mannequin (orange/purple, faceless, idle loop only) | Placeholder art: tone, inclusivity and body diversity not reviewed; no exercise demos yet | Design review; user testing with the target groups; decide on exercise demo clips for native |
+| X9 | Demo animations needed | 3D demo only for sit-to-stand (3 ladder steps). All others show text + muscle map: **squat** body-weight squat to a chair; **push** wall, counter, knee and floor push-up; **hinge** standing hip hinge to a wall, glute bridge, glute bridge with 2-second hold, single-leg glute bridge; **core** breathing + heel slides, forearm wall plank, forearm plank on knees, forearm plank, seated breathing + gentle belly brace; **balance** feet-together stand, supported single-leg stand, single-leg stand with fingertip support, single-leg stand with a reach; **cardio** easy march in place, march in place, brisk march with arm swings, step-backs + march; **seated** forward reach-and-return, chest press against a wall, forward lean & return, brace & breathe, seated reach, seated arm march | The free CC0 Quaternius packs (UAL 1 and 2, Standard) have no exercise clips. MakeHuman has CC0 *static* poses (e.g. push-up), not motion. Procedural keyframes were not attempted: wrong form in a demo is a safety risk | Commission or record CC0/owned clips (mocap or animator), reviewed by a coach/physio for form; check paid Quaternius tiers (CC0, 120+/130+ clips) for anything usable |
 
 > v0.7.2 note on X8: the mannequin is tinted toward the app palette at runtime (cloned materials). The CC0 GLB is unchanged; the look is still a placeholder.

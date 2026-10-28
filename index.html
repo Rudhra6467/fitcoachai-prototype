@@ -71,6 +71,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 .mmap{display:flex;gap:8px;justify-content:center;margin:8px 0}.mmap>div{width:40%;max-width:125px}.mmap .mmcap{font-size:11px;color:#9aa4b2;text-align:center}.mmfb{font-size:13px;color:#9aa4b2}
 .fxload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}.fxload i{width:58px;height:150px;border-radius:29px 29px 14px 14px;background:linear-gradient(100deg,#1d2533 30%,#26324a 50%,#1d2533 70%);background-size:300% 100%;opacity:.8}
 @media (prefers-reduced-motion:no-preference){.fxload i{animation:fxsh 1.4s linear infinite}}@keyframes fxsh{from{background-position:100% 0}to{background-position:-200% 0}}
+.fx3d.fxsm{height:clamp(150px,24vh,220px);margin-bottom:4px}.fxcap{margin:0 0 12px;text-align:center}
 .fx3d .fxsr{align-items:flex-end;padding-bottom:14px;font-size:12px}
 #top:empty{display:none}
 @media (max-height:720px){.donebtn{height:100px;font-size:34px}}
@@ -87,7 +88,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.7.2"></script>
+<script src="js/config.js?v=0.8.0"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -123,7 +124,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.7.2';
+const SCHEMA=4,APPVER='0.8.0';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -514,6 +515,10 @@ function sawLine(pat,R){const r=R.result;
  const what=r.reps!=null?`${r.reps} in ${Math.round(r.durationSec)} seconds`:r.holdSec!=null?`held about ${r.holdSec} seconds`:r.talkTest!=null?`${Math.round(r.durationSec)} seconds; ${r.talkTest?'you could say a full sentence':'talking was hard'}`:`${Math.round(r.durationSec||0)} seconds (no count given)`;
  return `${esc(r.name)}: ${what}, felt <b>${r.effort||'—'}</b>${r.pain?', with pain':''}. ${esc(R.note||'')}`}
 
+/* ===== v0.8 exercise demos (3D). Only exercises with a matching CC0 clip get one; all others keep the text + muscle map (see RESEARCH-FLAGS X9). ===== */
+const DEMOS={'Sit-to-stand (hands on thighs)':'sitToStand','Sit-to-stand, hands on thighs':'sitToStand','Sit-to-stand from a chair':'sitToStand','Slow sit-to-stand (3 seconds down)':'sitToStandSlow'};
+function demoBox(name,small){const d=DEMOS[name];if(!d)return '';const slow=d==='sitToStandSlow';
+ return `<div class="fx3d fxdemo${small?' fxsm':''}" data-fx="3d" data-demo="sitToStand" data-slow="${slow?1:0}" role="img" aria-label="3D demo: stand up from the chair, pause, then sit back down with control${slow?' over about 3 seconds':''}"></div><p class="sm mut fxcap">3D demo · shows the hands-on-thighs version${slow?' · slow 3-second sit-down':''}</p>`}
 /* ===== 2-week starter plan ===== */
 const LADDER={squat:['Sit-to-stand, hands on thighs','Sit-to-stand from a chair','Slow sit-to-stand (3 seconds down)','Body-weight squat to a chair'],
  push:['Wall push-up','Counter push-up','Knee push-up','Floor push-up'],
@@ -575,9 +580,9 @@ SC.baseline=()=>{if(!B)return `<p>Check-in isn't running.</p><button class="btn"
  const mic=`<span class="mic ${voiceOK&&recWanted?'on':''}">${voiceOK&&SR?(recWanted?'🎙 Listening':'🎙 Voice ready'):'🎙 Voice off — use buttons'}</span> <span class="sm mut" id="heard"></span>`;
  const stopB=`<button class="btn red" id="stopBtn" onclick="stopBaseline('button')">Stop</button>`,head=`<p class="mut sm">Test ${B.i+1} of ${B.tests.length} · ${PSHORT[t.pattern]}</p>`;
  switch(B.phase){
- case 'intro':return `${head}<h1>${esc(t.name)}</h1><div class="card">${esc(t.how)}</div><p class="sm mut" style="margin-bottom:0">Muscles this works:</p><div class="mmap" data-groups="${PMUS[t.pattern]}"></div><p class="sm mut">Up to ${t.cap} seconds.</p>${mic}
+ case 'intro':return `${head}<h1>${esc(t.name)}</h1>${demoBox(t.name)}<div class="card">${esc(t.how)}</div><p class="sm mut" style="margin-bottom:0">Muscles this works:</p><div class="mmap" data-groups="${PMUS[t.pattern]}"></div><p class="sm mut">Up to ${t.cap} seconds.</p>${mic}
   <button class="donebtn" id="startBtn" onclick="goTest('button')">Start</button><div class="row"><button class="btn sec" id="skipBtn" onclick="skipTest()">Skip this one</button>${stopB}</div>`;
- case 'run':return `${head}<h1>${esc(t.name)}</h1><div class="big" id="tm">${fmt(t.cap-B.elapsed)}</div>${B.paused?'<p style="text-align:center"><b>Paused</b></p>':''}<p style="text-align:center">${mic}</p>
+ case 'run':return `${head}<h1>${esc(t.name)}</h1>${demoBox(t.name,true)}<div class="big" id="tm">${fmt(t.cap-B.elapsed)}</div>${B.paused?'<p style="text-align:center"><b>Paused</b></p>':''}<p style="text-align:center">${mic}</p>
   <button class="donebtn" id="doneBtn" onclick="finishTest('button')">Done</button><div class="row"><button class="btn sec" id="pauseBtn" onclick="pauseTest(${!B.paused})">${B.paused?'Resume':'Pause'}</button>${stopB}</div><p class="sm mut">Say "done", "pause", or "stop". Stop right away if anything hurts.</p>`;
  case 'measure':if(t.measure==='talk')return `${head}<h1>Can you say a full sentence right now?</h1>${mic}<div class="row"><button class="btn" id="talkYes" onclick="setMeasure(true)">Yes</button><button class="btn sec" onclick="setMeasure(false)">Not really</button></div>`;
   return `${head}<h1>${t.measure==='reps'?'How many did you do?':'How many seconds did you hold?'}</h1>${mic}
@@ -605,11 +610,11 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  if(!canBack&&!st)document.getElementById('top').innerHTML='';
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.7.2"></script>
-<script src="js/app.js?v=0.7.2"></script>
-<script src="js/v05.js?v=0.7.2"></script>
-<script src="js/v06.js?v=0.7.2"></script>
-<script src="js/v07.js?v=0.7.2"></script>
+<script src="js/engine.js?v=0.8.0"></script>
+<script src="js/app.js?v=0.8.0"></script>
+<script src="js/v05.js?v=0.8.0"></script>
+<script src="js/v06.js?v=0.8.0"></script>
+<script src="js/v07.js?v=0.8.0"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};
@@ -636,7 +641,20 @@ async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(
   /* soft ground shadow (a blurred disc; cheaper than real-time shadows) */
   const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,.55)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);
   const sh=new THREE.Mesh(new THREE.PlaneGeometry(H*0.55,H*0.55),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=0.002;sc.add(sh);
-  const reduce=RM();const mix=new THREE.AnimationMixer(m);const clip=gltf.animations.find(a=>/idle/i.test(a.name))||gltf.animations[0];if(clip){const ac=mix.clipAction(clip);ac.play();if(reduce){mix.update(0.6);ac.paused=true}}
+  const reduce=RM();const mix=new THREE.AnimationMixer(m);const demo=el.dataset.demo||'';let still=()=>{};
+  const A=n=>gltf.animations.find(a=>a.name===n);
+  if(demo==='sitToStand'&&A('Sitting_Exit')&&A('Sitting_Enter')){
+   /* v0.8 demo: CC0 Quaternius clips Sitting_Exit (stand up) + Sitting_Enter (sit down), looped with short pauses, on a simple chair */
+   const cm=new THREE.MeshStandardMaterial({color:0x3a4a63,roughness:0.8}),box=(w,h,d,x,y,z)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),cm);b.position.set(x,y,z);m.add(b)};
+   box(0.5,0.05,0.46,0,0.42,-0.3);box(0.5,0.5,0.05,0,0.69,-0.53);[[-0.22,0.2],[0.22,0.2],[-0.22,-0.5],[0.22,-0.5]].forEach(([x,z])=>box(0.04,0.42,0.04,x,0.2,z-0.03));
+   m.rotation.y=-0.85; /* three-quarter side view so the hip and knee bend is visible */
+   const up=mix.clipAction(A('Sitting_Exit')),dn=mix.clipAction(A('Sitting_Enter'));[up,dn].forEach(a=>{a.setLoop(THREE.LoopOnce,1);a.clampWhenFinished=true});
+   if(el.dataset.slow==='1')dn.timeScale=A('Sitting_Enter').duration/3; /* "3 seconds down" */
+   let tmo=0;const play=(a)=>{mix.stopAllAction();a.reset().play()};
+   mix.addEventListener('finished',e=>{clearTimeout(tmo);tmo=setTimeout(()=>{if(el.isConnected)play(e.action===up?dn:up)},e.action===up?600:900)});
+   still=()=>{clearTimeout(tmo);mix.stopAllAction();up.reset().play();mix.setTime(0.45);up.paused=true}; /* mid-rise pose: hands on thighs, leaning forward */
+   if(reduce)still();else play(up);
+  }else{const clip=A('Idle_Loop')||gltf.animations[0];if(clip){const ac=mix.clipAction(clip);ac.play();still=()=>{mix.setTime(0.6);ac.paused=true};if(reduce)still()}}
   const oc=new OrbitControls(cam,r.domElement);oc.target.set(0,H*0.5,0);oc.enablePan=false;oc.enableZoom=false;oc.minPolarAngle=oc.maxPolarAngle=Math.PI/2.15;oc.enableDamping=!reduce;oc.update();
   const cvs=r.domElement;cvs.style.opacity='0';cvs.setAttribute('aria-hidden','true');
   el.innerHTML='';el.appendChild(cvs);const hint=document.createElement('div');hint.className='fxhint';hint.textContent='Drag to rotate';el.appendChild(hint);
@@ -648,7 +666,7 @@ async function mount3d(el){el.dataset.done='1';if(!hasWebGL())return fallback3d(
    if(!vis||document.hidden||(t-last)<32){if(!vis||document.hidden)clock.getDelta();return}last=t;const dt=clock.getDelta();
    if(reduce||slow){oc.update();if(!dirty)return;dirty=false}else{mix.update(dt);oc.update()}const t0=performance.now();r.render(sc,cam);
    /* slow GPU guard: if frames keep taking >60 ms (software rendering, very old phones), hold the idle pose and draw only on drag */
-   if(!slow){slowN=(performance.now()-t0>60)?slowN+1:0;if(slowN>=3)slow=true}};
+   if(!slow){slowN=(performance.now()-t0>60)?slowN+1:0;if(slowN>=3){slow=true;still();dirty=true}}};
   r.render(sc,cam);loop(0);
   requestAnimationFrame(()=>{cvs.style.transition=reduce?'none':'opacity .5s ease-out';cvs.style.opacity='1'});
   el.dataset.ready='1';

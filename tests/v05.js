@@ -70,7 +70,7 @@ const IPH='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/60
   const sw=await pg.evaluate(async()=>{const r=await navigator.serviceWorker.ready;for(let i=0;i<60&&!navigator.serviceWorker.controller;i++)await new Promise(z=>setTimeout(z,250));
    const ks=await caches.keys(),c=await caches.open(ks.find(k=>k.startsWith('fcai-')));const keys=(await c.keys()).map(r=>r.url);
    return {active:!!r.active,ctl:!!navigator.serviceWorker.controller,ks,glb:keys.some(u=>u.endsWith('coach-mannequin.glb')),three:keys.some(u=>u.includes('three.module.min.js')),gltf:keys.some(u=>u.includes('GLTFLoader.js')),n:keys.length}});
-  check(sw.active&&sw.ctl&&sw.ks.some(k=>/^fcai-v0\.7/.test(k)),'service worker active, versioned cache '+JSON.stringify(sw.ks));
+  check(sw.active&&sw.ctl&&sw.ks.some(k=>/^fcai-v0\.[78]/.test(k)),'service worker active, versioned cache '+JSON.stringify(sw.ks));
   check(sw.glb&&sw.three&&sw.gltf,'cache holds coach-mannequin.glb + three.js (vendored) ('+sw.n+' files)');
   await ctx.setOffline(true);await pg.reload();await w(2500);
   check((await pg.textContent('#app')).includes("FitcoachAI coach")&&await has('#ack'),'offline reload: app loads');
