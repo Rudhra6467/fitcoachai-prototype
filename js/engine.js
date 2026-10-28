@@ -3,8 +3,8 @@
 (function(root){
 'use strict';
 const CFG=(typeof module!=='undefined'&&module.exports)?require('./config.js'):root.FC_CONFIG;
-const A=CFG.APPROVED,X=CFG.RESEARCH_NEEDED;
-// safe defaults if a stale config.js is served (same values as js/config.js; placeholders R19/R21)
+const A=CFG.APPROVED,X=CFG.ALL||Object.assign({},CFG.APPROVED,CFG.RESEARCH_NEEDED);
+// safe defaults if a stale config.js is served (same values as js/config.js; approved R19/R21)
 if(!X.calibration)X.calibration={minSessions:6,minPatterns:3,minSessionsPerPattern:2,maxRatioSpread:0.35};
 if(!X.performanceScore)X.performanceScore={weights:{completion:0.4,volume:0.4,adherence:0.2},adherenceUnplannedDay:0.75};
 const PATS=['squat','push','hinge','core','balance','cardio'];
@@ -122,7 +122,7 @@ function tighten(e0,want,atISO){const e=clone(e0),D=[];
  e.decisions=e.decisions.concat(D);return {eng:e,decisions:D}}
 function fullList(ps){return ps.obs.filter(o=>o.triage==='full'&&!o.pain&&(o.sets||[]).length&&o.sets.every(x=>x!=null&&isFinite(x)))}
 function fullObs(ps){return fullList(ps).length}
-/* v0.6 calibration: data-quality driven, never time-driven (CORE PRODUCT LOGICS §3). Thresholds: R19 (placeholders).
+/* v0.6 calibration: data-quality driven, never time-driven (CORE PRODUCT LOGICS §3). Thresholds: R19 (approved 2026-10-27).
    A "quality session" = a session with at least one fully counted, pain-free, full-version exercise.
    A pattern is "confident" with >= minSessionsPerPattern quality observations whose last two volume ratios agree. */
 function ratio(o){const avg=o.sets.reduce((a,b)=>a+b,0)/o.sets.length;return o.tgt?avg/o.tgt:null}
@@ -145,7 +145,7 @@ function tier(e,p,nowISO){const ps=e.patterns[p],n=fullObs(ps),c=calibration(e,n
  if(n<X.calibration.minSessionsPerPattern)return {t:2,label:'Early',conf:'Low'};
  if(!c.complete||!c.per[p].consistent)return {t:3,label:'Building',conf:'Medium'};
  return {t:4,label:'Personalized',conf:'High'}}
-/* v0.6 Performance Score — R21 PLACEHOLDER formula: weighted mix of completion, volume ratio and adherence.
+/* v0.6 Performance Score — R21 formula (approved 2026-10-27): weighted mix of completion, volume ratio and adherence.
    Pain-stopped exercises are left out (never penalise stopping for pain). Unknown counts leave volume out. */
 function perfScore(rx,results,o){o=o||{};const W=X.performanceScore.weights;let planned=0,done=0,vs=[];
  rx.forEach(x=>{const r=results.find(q=>q.pattern===x.pattern);if(r&&r.pain)return;planned++;if(!r||r.skipped)return;
@@ -154,7 +154,7 @@ function perfScore(rx,results,o){o=o||{};const W=X.performanceScore.weights;let 
  const parts={completion:done/planned,volume:vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null,adherence:o.plannedDay===false?X.performanceScore.adherenceUnplannedDay:1};
  let sw=0,sum=0;Object.keys(W).forEach(k=>{if(parts[k]==null)return;sw+=W[k];sum+=W[k]*parts[k]});
  const score=Math.round(100*sum/sw);
- return {score,parts,weights:W,formula:'R21-placeholder',why:'How much of today\'s plan you did, how close you got to the target, and whether it was a planned day.'}}
+ return {score,parts,weights:W,formula:'R21',why:'How much of today\'s plan you did, how close you got to the target, and whether it was a planned day.'}}
 function tolerance(ps){const r=ps.obs.slice(-3);if(!r.length)return 'Unknown';if(r.some(o=>o.pain))return 'Needs care';if(r.filter(o=>o.effort==='hard').length>=2)return 'Finding it tough';return 'Handling it well'}
 const CEIL=X.scoreCeilingByTier;
 /* Score = share of today's prescription actually done. Evidence ceiling; no floor for just showing up. */

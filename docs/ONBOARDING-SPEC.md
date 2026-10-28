@@ -8,7 +8,7 @@ date: "October 26, 2026"
 
 | | |
 |---|---|
-| **Status** | **PROPOSED — not approved**, except the 10 decisions marked ✅ APPROVED (founder, Oct 26, 2026) — see §9 Decision log. Everything not marked APPROVED is still a proposal for discussion between the founder and a colleague. |
+| **Status** | **PROPOSED — not approved**, except the 10 decisions marked ✅ APPROVED (founder, Oct 26, 2026) and Decision Round 1 (owner, Oct 27, 2026) — see §9 Decision log. Everything not marked APPROVED is still a proposal for discussion between the founder and a colleague. |
 | **Platform** | iPhone first, SwiftUI. Everything runs on the device. No accounts, no backend, no LLM in the MVP. |
 | **Scope** | First launch through the start of the voice-guided baseline assessment. |
 | **Target time** | 3–4 minutes to reach the assessment; the assessment itself takes about 6–10 minutes. |
@@ -820,17 +820,17 @@ At day 7: a short "Here's what I learned" screen; any plan change (days, minutes
 
 ### 7.1 Still open (PROPOSED)
 
-1. **OQ-1a Pelvic-floor physio review.** The 12-week early-postpartum line is approved, but a pelvic-floor physio must still review it before launch. They should also say whether a C-section needs a longer window and check the post-session postpartum questions.
-2. **OQ-5 Red-flag wording sign-off.** SAFE-REF/DOC/STOP/PAIN wording needs legal and clinical review, and localization per country (e.g., "family doctor" vs. "GP", emergency number).
-3. **OQ-6b Older adults.** Should 70+ default to gentle mode, or only via the health check (current proposal)?
-4. **OQ-9 Holidays.** Use only device locale for public holidays, or ask for Calendar access (more context, more privacy friction)?
-5. **OQ-11 Backups/export.** Rely on iOS device backups only, or add an encrypted export file? Affects the privacy copy on S2.
-6. **OQ-12 First name** for voice coaching ("Nice work, Sam") — worth one optional field?
-7. **OQ-13 Voice reliability.** On-device "done"/"stop" in noisy homes (TV, kids). Acceptable error rate? Do we need a hold-to-talk mode?
-8. **OQ-15 Regulatory.** Confirm positioning as a general wellness app (not a medical device) in target countries, and App Store health-claim rules for copy.
-9. **OQ-16 Screen count.** 11 screens + summary + handoff, plus up to 2 conditional screens. Do we merge S1 and S2 to feel even shorter?
-10. **OQ-17 Gentle-mode details.** Gentle mode's effort cap, progression rate, and warm-up lengths (S7) are still proposals.
-11. **OQ-18 Apple Health read types** (S12) are still a proposal.
+1. **OQ-1a Pelvic-floor physio review.** The 12-week early-postpartum line is approved, but a pelvic-floor physio must still review it before launch. They should also say whether a C-section needs a longer window and check the post-session postpartum questions. — **DEFERRED (physio review; interim C-section line added)**
+2. **OQ-5 Red-flag wording sign-off.** SAFE-REF/DOC/STOP/PAIN wording needs legal and clinical review, and localization per country (e.g., "family doctor" vs. "GP", emergency number). — **DEFERRED (legal + clinical review)**
+3. **OQ-6b Older adults.** Should 70+ default to gentle mode, or only via the health check (current proposal)? — **✅ APPROVED Oct 27 (health-check route; 70+ already gets easier balance + lower thresholds)**
+4. **OQ-9 Holidays.** Use only device locale for public holidays, or ask for Calendar access (more context, more privacy friction)? — **✅ APPROVED Oct 27 (locale only)**
+5. **OQ-11 Backups/export.** Rely on iOS device backups only, or add an encrypted export file? Affects the privacy copy on S2. — **DEFERRED (native build)**
+6. **OQ-12 First name** for voice coaching ("Nice work, Sam") — worth one optional field? — **DEFERRED (pilot test)**
+7. **OQ-13 Voice reliability.** On-device "done"/"stop" in noisy homes (TV, kids). Acceptable error rate? Do we need a hold-to-talk mode? — **✅ APPROVED Oct 27 (buttons always on screen; measure in pilot)**
+8. **OQ-15 Regulatory.** Confirm positioning as a general wellness app (not a medical device) in target countries, and App Store health-claim rules for copy. — **DEFERRED (regulatory review)**
+9. **OQ-16 Screen count.** 11 screens + summary + handoff, plus up to 2 conditional screens. Do we merge S1 and S2 to feel even shorter? — **DEFERRED (user testing)**
+10. **OQ-17 Gentle-mode details.** Gentle mode's effort cap, progression rate, and warm-up lengths (S7) are still proposals. — **✅ APPROVED Oct 27 (conservative; physio review before launch)**
+11. **OQ-18 Apple Health read types** (S12) are still a proposal. — **✅ APPROVED Oct 27 (sleep + workouts only)**
 
 ### 7.2 Resolved — ✅ APPROVED by the founder on Oct 26, 2026
 
@@ -904,6 +904,7 @@ enum MovementPattern { case squat, hinge, horizontalPush, verticalPush, horizont
 | Oct 26, 2026 | Height and weight dropped (question, fields, references removed; questions renumbered Q1–Q9). | Founder | S3, §1, §5, §6, §8 |
 | Oct 26, 2026 | Health check re-asked every 90 days. | Founder | S7 |
 | Oct 26, 2026 | Under-18s stopped. | Founder | S3 |
+| Oct 27, 2026 | Decision Round 1 (docs/DECISION-ROUND-1.md): 35 items APPROVED and applied in v0.9.0; 9 DEFERRED pending expert/clinical/legal/budget input (X6, X9, R24, OQ-1a, OQ-5, OQ-15, OQ-11, OQ-12, OQ-16). OQ-9, OQ-13, OQ-17, OQ-18, OQ-6b approved. Physio/clinical review of R7, R11, X2, OQ-17 still required before launch. | Owner (vamsimadhav) | §7.1, config |
 
 ---
 

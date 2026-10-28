@@ -17,7 +17,7 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
  const ev=()=>pg.evaluate(()=>JSON.parse(localStorage.getItem(KL)||'[]').map(e=>e.type||e.t||e.event));
  const st=()=>pg.evaluate(()=>{const c=calib();return {c:{sessions:c.sessions,complete:c.complete,extending:c.extending,confident:c.confident},lv:Object.fromEntries(ENG.PATS.map(x=>[x,E().patterns[x].lvl])),done:calDone(),seeded:P().plan.seededBy||null,n:P().sessions.length}});
  // --- beginner start regardless of experience ("active most weeks" + strong baseline)
- let s0=await st();const beg=await pg.evaluate(()=>ENG.PATS.every(x=>E().patterns[x].lvl===(FC_CONFIG.RESEARCH_NEEDED.beginnerLevel[x])));
+ let s0=await st();const beg=await pg.evaluate(()=>ENG.PATS.every(x=>E().patterns[x].lvl===(FC_CONFIG.APPROVED.beginnerLevel[x])));
  check(beg,'everyone starts at beginner levels despite "regular" experience '+JSON.stringify(s0.lv));
  check((await pg.textContent('#calib')).includes('Getting to know you: 0 of 6 sessions'),'Today: "Getting to know you: 0 of 6 sessions"');
  check(await pg.evaluate(()=>!/day \d+ of/i.test(document.querySelector('#calib').textContent)),'no fixed day count in the calibration meter');
@@ -40,7 +40,7 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
  const t0=Date.now();let taps=0;await pg.click('[data-pc="pain"][data-v="no"]');taps++;await pg.click('[data-pc="energy"][data-v="good"]');taps++;await ck('#postDone');taps++;
  check(taps<=4&&Date.now()-t0<10000,`post check-in: ${taps} taps, effort optional, ${Date.now()-t0} ms`);
  check(await has('#perfCard')&&await has('#score')&&await has('[data-part="completion"]')&&await has('[data-part="volume"]')&&await has('[data-part="adherence"]'),'Performance Score screen with completion / volume / adherence');
- check((await pg.textContent('#perfCard')).includes('placeholder'),'score formula labelled placeholder');
+ check(!(await pg.textContent('#perfCard')).includes('placeholder'),'score formula no longer labelled placeholder (R21 approved)');
  check(await has('#reasonLine'),'one-line reason shown: '+(await has('#reasonLine')?await pg.textContent('#reasonLine'):''));
  const s1=await pg.evaluate(()=>P().sessions[0]);
  check(s1.results.every(r=>r.timing&&r.timing.setSec.length===r.sets.length&&r.timing.doneAtUTC.length===r.sets.length),'per-set timing + done timestamps recorded');
@@ -62,11 +62,11 @@ const fakeSR=`class FakeSR{constructor(){}start(){window.__recActive=this}abort(
  // --- +/-1 rule over the whole history
  const jump=await pg.evaluate(()=>{let mx=0;ENG.PATS.forEach(x=>{const o=E().patterns[x].obs;for(let i=1;i<o.length;i++)mx=Math.max(mx,Math.abs(o[i].lvl-o[i-1].lvl))});return mx});
  check(jump<=1,'level never changes by more than 1 between sessions (max '+jump+')');
- check(await pg.evaluate(()=>P().sessions.every(s=>s.score&&s.score.formula==='R21-placeholder')),'every session has a Performance Score');
+ check(await pg.evaluate(()=>P().sessions.every(s=>s.score&&s.score.formula==='R21')),'every session has a Performance Score');
  // --- version
- await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.8.0'),'settings version line v0.8.0');
+ await ck('#tab-settings');check((await pg.textContent('#app')).includes('v0.9.0'),'settings version line v0.9.0');
  const html=await (await pg.request.get(BASE+'index.html')).text(),sw=await (await pg.request.get(BASE+'sw.js')).text();
- check(!html.includes('v=0.5')&&!html.includes('v=0.6')&&html.includes('js/v07.js?v=0.8.0')&&sw.includes("fcai-v0.8.0")&&sw.includes('js/v07.js'),'?v=0.8.0 everywhere + SW cache fcai-v0.8.0');
+ check(!html.includes('v=0.5')&&!html.includes('v=0.6')&&html.includes('js/v07.js?v=0.9.0')&&sw.includes("fcai-v0.9.0")&&sw.includes('js/v07.js'),'?v=0.9.0 everywhere + SW cache fcai-v0.9.0');
  // --- migration from v0.5 (schema 2) keeps data
  const old=await pg.evaluate(()=>{const o=JSON.parse(localStorage.getItem(KP));o.schemaVersion=2;delete o.p.calib;const n=o.p.sessions.length;localStorage.setItem(KP,JSON.stringify(o));return n});
  await pg.reload();await pg.waitForTimeout(400);

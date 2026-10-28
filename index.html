@@ -88,8 +88,8 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.8.0"></script>
-<script>var OBD=(window.FC_CONFIG&&FC_CONFIG.RESEARCH_NEEDED&&FC_CONFIG.RESEARCH_NEEDED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
+<script src="js/config.js?v=0.9.0"></script>
+<script>var OBD=(window.FC_CONFIG&&FC_CONFIG.APPROVED&&FC_CONFIG.APPROVED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
 <script>
@@ -124,7 +124,7 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.8.0';
+const SCHEMA=4,APPVER='0.9.0';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -134,6 +134,8 @@ function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object'
  /* v3 (v0.6): calibration state; existing users keep their data (never deleted) */
  if(o.p.eng&&!o.p.calib)o.p.calib={startedAt:o.p.planStartedAt||o.p.eng.startedAt||null,completedAt:null,migrated:true};
  if(from<4){o.p.ease=o.p.ease||null;o.p.mods=o.p.mods||{}}
+ /* v0.9: R21 approved, old session scores drop the placeholder label (values unchanged) */
+ (o.p.sessions||[]).forEach(x=>{if(x&&x.score&&x.score.formula==='R21-placeholder')x.score.formula='R21'});
  if(from<SCHEMA){o.migratedFrom=from;o.schemaVersion=SCHEMA;o._justMigrated=true}return o}
 let S=migrateState(lsGet(KP))||freshState();S.schemaVersion=SCHEMA;
 if(S._justMigrated){delete S._justMigrated;setTimeout(()=>{logEv('storage_migrated',{from:S.migratedFrom,to:SCHEMA});save()},0)}
@@ -320,7 +322,7 @@ SC.s7a=()=>{const pp=P().postpartum;const c=(k,v,l)=>`<button class="chip ${pp[k
  return `<h1>Congratulations — and thank you for telling us.</h1>${askedViaGoal?`<p class="mut">You picked "Get back into exercise after a baby." <b>When was your baby born?</b></p>`:''}
 <h2>Which applies to you?</h2><div class="list chips">${c('status','pregnant','I&#39;m pregnant now')}${c('status','hadBaby','I had a baby')}${askedViaGoal?c('status','none','No baby in the last 12 months'):''}</div>
 ${pp.status==='hadBaby'?`<h3>When?</h3><input type="month" id="bm" value="${esc(pp.birthMonth)}" onchange="P().postpartum.birthMonth=this.value;save()" aria-label="Birth month and year">
-<h3>How was your baby born?</h3><div class="chips">${c('birthType','vaginal','Vaginal birth')}${c('birthType','cesarean','C-section')}${c('birthType','undisclosed','Prefer not to say')}</div>
+<h3>How was your baby born?</h3><div class="chips">${c('birthType','vaginal','Vaginal birth')}${c('birthType','cesarean','C-section')}${c('birthType','undisclosed','Prefer not to say')}</div>${pp.birthType==='cesarean'?'<p class="sm mut" id="csNote">If you had a C-section, follow your clinician\'s advice on timing.</p>':''}
 <h3>Has your doctor, midwife, or physio said you're ready to start exercising again?</h3><div class="chips">${c('clearance','yes','Yes')}${c('clearance','no','Not yet')}${c('clearance','unsure','Not sure')}</div>`:''}
 <button class="btn" id="next" onclick="next()">Next</button>`};
 const STOPCOPY={under18:'FitcoachAI is built for adults (18+) for now.',pregnant:"FitcoachAI isn't built for pregnancy yet. Your doctor or midwife can tell you what's right for you.",earlyPostpartum:"The first weeks after birth are for recovery. We'll be here when you're ready.",clearance:'Please get the go-ahead from your doctor, midwife, or physio first.'};
@@ -357,7 +359,7 @@ SC.s11=()=>{const p=P(),shift=['eveningNight','rotating','irregular'].includes(p
 ${p.nudgeMode==='fixedTime'?`<input type="time" value="${esc(p.nudgeTime)}" onchange="P().nudgeTime=this.value;save()" aria-label="Nudge time">${shift?'<p class="sm mut">Tip: with changing shifts, letting me learn usually works better.</p>':''}`:''}
 <button class="btn" id="next" onclick="next()">Next</button>`};
 SC.s12=()=>`<h1>Connect Apple Health? (optional)</h1>
-<p>If you'd like, FitcoachAI can <b>read</b> some of your Apple Health data to understand your days better — like steps, sleep, and workouts. <b>We never write to Apple Health, and the data stays on your phone.</b></p>
+<p>If you'd like, FitcoachAI can <b>read</b> some of your Apple Health data to understand your days better — like sleep and workouts. <b>We never write to Apple Health, and the data stays on your phone.</b></p>
 <p>You choose exactly what to share on the next screen, and you can change it any time in the Health app.</p>
 <button class="btn" onclick="hkConnect()">Connect Apple Health</button><button class="btn sec" id="next" onclick="P().healthKitChoice='notNow';next()">Not now</button>`;
 function hkConnect(){P().healthKitChoice='connect';P().healthKitRequestedAt=nowISO();logEv('healthkit_stub');toast("Stub: Apple Health isn't available on the web. All Health data is treated as unknown.");next()}
@@ -610,11 +612,11 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  if(!canBack&&!st)document.getElementById('top').innerHTML='';
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.8.0"></script>
-<script src="js/app.js?v=0.8.0"></script>
-<script src="js/v05.js?v=0.8.0"></script>
-<script src="js/v06.js?v=0.8.0"></script>
-<script src="js/v07.js?v=0.8.0"></script>
+<script src="js/engine.js?v=0.9.0"></script>
+<script src="js/app.js?v=0.9.0"></script>
+<script src="js/v05.js?v=0.9.0"></script>
+<script src="js/v06.js?v=0.9.0"></script>
+<script src="js/v07.js?v=0.9.0"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};

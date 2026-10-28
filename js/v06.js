@@ -1,7 +1,7 @@
 /* FitcoachAI v0.6 — calibration phase. Data-driven "Getting to know you" (no fixed day count), everyone starts as a beginner,
    per-set timing recorded quietly, one-line plain reasons for each small (+/-1) adaptation, post-session check-in (<10 s),
    Performance Score screen after every session, plan generated from calibration data. All on-device; no LLM.
-   Every threshold is a placeholder in FC_CONFIG.RESEARCH_NEEDED (R19-R24). */
+   Thresholds R19-R23 approved in Decision Round 1 (FC_CONFIG.APPROVED); R24 still open. */
 const CX6=Object.assign({calibration:{minSessions:6,minPatterns:3,minSessionsPerPattern:2,maxRatioSpread:0.35},beginnerLevel:{squat:0,push:0,hinge:0,core:1,balance:0,cardio:0},
  performanceScore:{weights:{completion:0.4,volume:0.4,adherence:0.2},adherenceUnplannedDay:0.75},fastSecPerRep:2,postCheckPainMarksPatternNotReady:true,experienceTone:{}},CX);
 function calState(){const p=P();p.calib=p.calib||{startedAt:p.planStartedAt||nowISO(),completedAt:null};return p.calib}
@@ -106,7 +106,7 @@ SC.sessionDone=()=>{const s=(P().sessions||[]).find(x=>x.id===S.lastSession);if(
  return `<h1>${s.stopped?(s.stopWhy==='sharpPain'?'Stopped — that was the right call.':'Stopped. That\'s okay.'):'Workout done ✓'}</h1>
  ${s.stopWhy==='sharpPain'?safe('PAIN')+safe('STOP'):s.stopped?safe('STOP'):''}
  <div class="card" id="perfCard"><h2 style="margin-bottom:4px">Performance Score</h2><div class="big" style="margin:4px 0"><span id="score">${sc.score==null?'—':sc.score}</span>${sc.score==null?'':'<span class="sm mut">/100</span>'}</div>
- ${scoreBars(sc)}<p class="sm mut">${esc(sc.why||'')} It's not a fitness grade. <span class="flag">(formula: placeholder)</span></p>${dur}</div>
+ ${scoreBars(sc)}<p class="sm mut">${esc(sc.why||'')} It's not a fitness grade.</p>${dur}</div>
  ${s.reason?`<div class="card" id="reasonLine"><b>Adjusted for you:</b> ${esc(s.reason)}</div>`:''}
  ${s.planReady?`<div class="card" id="planReadyCard"><h2>Your plan is ready 🎉</h2><p class="sm">I've seen enough of your sessions to build your own plan.</p><button class="btn" id="seePlan" onclick="go('planReady')">See my plan</button></div>`:s.calibration?calibCard(c,true):''}
  <details class="more"><summary>What changed and why</summary>${plainChanges(s.decisions)}</details>
@@ -119,7 +119,7 @@ function calibCard(c,compact){if(calDone())return `<div class="card" id="calib" 
  let why='';if(c.extending){const parts=[];if(c.inconsistent.length)parts.push(`your last two ${c.inconsistent.map(x=>PSHORT[x]).join(', ')} sessions were quite different`);
   if(c.confident.length<c.needPatterns)parts.push(`I need ${C.minSessionsPerPattern} counted sessions each for ${c.needPatterns} movement types — ${c.confident.length} so far`);why=parts.join('; and ')}
  return `<div class="card" id="calib" data-state="${c.extending?'extending':'calibrating'}"><b id="${c.extending?'calibExtend':'calibTitle'}">${c.extending?'A few more sessions and I\'ll have you dialed in.':`Getting to know you: ${Math.min(c.sessions,c.needSessions)} of ${c.needSessions} sessions`}</b><div class="bar"><i style="width:${c.pct}%"></i></div>
- <p class="sm mut">${c.extending?esc(why.charAt(0).toUpperCase()+why.slice(1))+'.':esc(toneLine())} <span class="flag">(thresholds: placeholder)</span></p>
+ <p class="sm mut">${c.extending?esc(why.charAt(0).toUpperCase()+why.slice(1))+'.':esc(toneLine())}</p>
  ${!compact&&last?`<p class="sm" id="lastReason"><b>Last change:</b> ${esc(last.reason)}</p>`:''}
  ${compact?'':`<details class="sm mut"><summary>Details</summary>${PATTERNS.filter(x=>c.per[x].included).map(x=>`${PSHORT[x]} ${Math.min(c.per[x].obs,c.per[x].need)}/${c.per[x].need}${c.per[x].personalized?' ✓':''}`).join(' · ')}<br>Only full sessions with counts logged teach me. Short or stopped sessions still count for you.</details>`}</div>`}
 {const _t=SC.today;SC.today=()=>{let h=_t();if(!E())return h;

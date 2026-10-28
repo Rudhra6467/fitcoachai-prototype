@@ -4,7 +4,7 @@
       accepts with an honest note. Reasons are optional while getting to know you and required afterwards. Everything is logged.
    3. "Why this workout" line on Today.
    4. Honest note for older data that already completed calibration on upgrade.
-   All on-device; no LLM. Thresholds and the response order are placeholders (RESEARCH_NEEDED R23, R25). */
+   All on-device; no LLM. Thresholds and the response order approved in Decision Round 1 (R23, R25). */
 
 /* ---------- 1. Ease the next session after a hard one ---------- */
 function easePending(){const e=P().ease;return !!(e&&!e.usedAt&&!e.declinedAt)}
@@ -37,9 +37,14 @@ function modResolve(kind){const M=S.mod,m=modToday(),pat=M.pattern;let applied=k
  logEv('modification_applied',{action:M.action,pattern:pat,reason:M.reason,response:M.response,applied});S.mod=null;go('today',false)}
 function modUndo(){const m=modToday();logEv('modification_undone',{was:{skip:m.skip,swap:m.swap,short:m.short}});modSave({skip:[],swap:{},short:false,log:m.log});render()}
 /* decide the response: counter-offer -> accept with adjustment -> accept with an honest note */
+/* R25 (approved): skips of one movement in the last CX.skipNoteWindowDays days (today's planned skips + in-session skips), not counting today's pending one */
+function recentSkips(pat){const p=P(),cut=appNow()-CX.skipNoteWindowDays*864e5,tk=todayKey();let n=0;
+ for(const k in (p.mods||{})){const t=Date.parse(k);if(k!==tk&&t>=cut&&(p.mods[k].skip||[]).includes(pat))n++}
+ for(const x of (p.sessions||[])){const t=Date.parse(x.at||x.startedAt||x.date||'');if(t>=cut&&(x.results||[]).some(r=>r.pattern===pat&&r.skipped&&r.reason==='user'))n++}
+ if((modToday().skip||[]).includes(pat))n++;return n}
 function modOffer(M){const C=(CX.modCounter||{})[M.reason]||'none',a=M.action,pat=M.pattern,nm=pat?esc(todayName(pat)):'';const alt=pat&&altFor(pat);
  const B=(id,label,kind,sec)=>`<button class="btn${sec?' sec':''}" id="${id}" onclick="S.mod.response='${id}';modResolve('${kind}')">${label}</button>`;
- const skipNote='<p class="sm mut" id="modNote">Skipping now and then is fine. It just won\'t move up until you do it.</p>';
+ const n=pat?recentSkips(pat)+1:0,skipNote='<p class="sm mut" id="modNote">Skipping now and then is fine. It just won\'t move up until you do it.</p>'+(n>=CX.skipNoteAfter?`<p class="sm mut" id="modRepeat">You've skipped this ${n} times in the last 2 weeks. That's okay. If something about it doesn't suit you, a swap may help.</p>`:'');
  if(M.reason==='pain'){if(a==='short')return `<p>Okay, the short version: 1 set of everything.</p>${safe('PAIN')}${B('modOk','Okay','short')}`;
   return `<p>With pain, it's safer to leave <b>${nm}</b> out than to swap it. It goes on hold until it's been pain-free for a while.</p>${safe('PAIN')}${B('modOk','Okay','hold')}`}
  if(a==='short')return `<p>Okay, the short version today: 1 set of everything. Nothing moves up or down.</p>${B('modOk','Okay','short')}`;
@@ -49,7 +54,7 @@ function modOffer(M){const C=(CX.modCounter||{})[M.reason]||'none',a=M.action,pa
  return `<p>Okay, <b>${nm}</b> is left out today.</p>${B('modOk','Okay','skip')}${skipNote}`}
 function todayName(pat){const m=modToday(),r=ENG.prescribe(E(),pat,ctxG(planMode()));return m.swap[pat]||nameFor(pat,r?r.lvl:0)}
 function reasonChips(){return `<div class="chips" id="modReasons" role="group" aria-label="Reason">${Object.entries(MOD_REASONS).filter(([k])=>(CX.modReasons||[]).includes(k)).map(([k,v])=>`<button class="chip" data-reason="${k}" onclick="modReason('${k}')">${v}</button>`).join('')}${modNeedReason()?'':`<button class="chip" data-reason="none" onclick="modReason(null)">Rather not say</button>`}</div>
- <p class="sm mut">${modNeedReason()?'Pick one. It helps me adjust your plan.':'Optional while I get to know you.'} <span class="flag">(responses: placeholder)</span></p>`}
+ <p class="sm mut">${modNeedReason()?'Pick one. It helps me adjust your plan.':'Optional while I get to know you.'}</p>`}
 SC.modify=()=>{const M=S.mod;if(!M||!E())return '<button class="btn" onclick="go(\'today\',false)">Today</button>';const ts=todaySlot(),slot=ts.slot||P().plan.weeks[0][0],m=modToday();
  const back='<button class="btn sec" id="modBack" onclick="S.mod=null;go(\'today\',false)">Keep the workout as it is</button>';
  if(M.step==='what')return `<h1>Change today's workout</h1><ul class="modList">${sessionPatterns(slot).filter(x=>!m.skip.includes(x)).map(x=>`<li><b>${esc(todayName(x))}</b><span><button class="chip" data-mod="swap" data-pat="${x}" onclick="modPick('swap','${x}')">Swap</button><button class="chip" data-mod="skip" data-pat="${x}" onclick="modPick('skip','${x}')">Skip</button></span></li>`).join('')}</ul>
@@ -78,7 +83,7 @@ function explainToday(slot){const p=P(),parts=[],m=modToday();
  h=h.replace(/<p class="sm" id="whyLine">[\s\S]*?<\/p><\/div>/,`<p class="sm" id="whyLine"><b>Why this workout:</b> ${esc(explainToday(slot))}</p>`+
   ((m.short||m.skip.length||Object.keys(m.swap).length)?`<button class="link" id="modUndo" onclick="modUndo()">Undo my changes</button>`:'')+
   `<button class="btn sec" id="modOpen" onclick="openMod()">Change something</button></div>`);
- if(easePending()&&!m.short)h=h.replace('<div class="card" id="todayWorkout">',`<div class="card" id="easeCard"><b>A lighter session today</b><p class="sm">Last time ${easeWhy(P().ease)}, so today has slightly fewer reps or seconds. Your level stays the same, and nothing moves up or down. <span class="flag">(rule: placeholder)</span></p><button class="link" id="easeDecline" onclick="declineEase()">I feel fine, use the usual amount</button></div><div class="card" id="todayWorkout">`);
+ if(easePending()&&!m.short)h=h.replace('<div class="card" id="todayWorkout">',`<div class="card" id="easeCard"><b>A lighter session today</b><p class="sm">Last time ${easeWhy(P().ease)}, so today has slightly fewer reps or seconds. Your level stays the same, and nothing moves up or down.</p><button class="link" id="easeDecline" onclick="declineEase()">I feel fine, use the usual amount</button></div><div class="card" id="todayWorkout">`);
  if(m.short)h=h.replace(/id="startSession" onclick="startSession\('full'\)">Start workout/,'id="startSession" onclick="startSession(\'short\')">Start short workout').replace(/<button class="btn sec" id="startShort"[^>]*>[^<]*<\/button>/,'');
  return h}}
 /* session done: say when the next session will be lighter */

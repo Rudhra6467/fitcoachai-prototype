@@ -1,11 +1,13 @@
 /* FitcoachAI prototype — post-onboarding app: Today, session player, calibration, learned, decisions, settings,
    reminders, simulated Apple Health, dev day simulation. Classic script; shares globals with index.html. */
-const CA=FC_CONFIG.APPROVED,CX=FC_CONFIG.RESEARCH_NEEDED,DAYMS=864e5;
+const CA=FC_CONFIG.APPROVED,CX=FC_CONFIG.ALL,DAYMS=864e5;
 const DEV={on:/[?&]dev=1/.test(location.search)||!!lsGet('fcai_proto_dev'),fast:!!lsGet('fcai_proto_fast')};
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const todayKey=()=>{const d=new Date(appNow());return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const fmtDay=iso=>new Date(iso).toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
 /* defaults; js/v07.js replaces these */
+/* R12 (approved): a "need more rest" option adds time to the current rest */
+function moreRest(){if(!W||W.phase!=='rest')return;W.restDur+=CX.restExtendSec;W.restLeft+=CX.restExtendSec;const el=document.getElementById('t');if(el)el.textContent=W.restLeft;logEv('rest_extended',{by:CX.restExtendSec})}
 function planMode(){return 'full'}
 function modToday(){return {skip:[],swap:{},short:false}}
 const ctxG=t=>({gentle:gentleMode(),triage:t||'full',easeStep:CX.easeStep});
@@ -103,7 +105,7 @@ function weekStats(){const ss=(P().sessions||[]).filter(s=>!s.stopped),ws=weekSt
  let streak=0,w=ws;if(thisWeek)streak=1;for(let i=1;i<60;i++){const a=w-i*7*DAYMS,b=a+7*DAYMS;if(ss.some(s=>Date.parse(s.at)>=a&&Date.parse(s.at)<b))streak++;else break}
  return {done:thisWeek,goal:weekGoal(),streak}}
 function weekCard(){const w=weekStats();const msg=w.done>=w.goal?'Weekly goal reached. Anything extra is a bonus.':w.done?`${w.goal-w.done} more to reach this week's goal — no rush.`:'A fresh week. One short workout gets it going.';
- return `<div class="card" id="weekCard"><b>This week: ${w.done} of ${w.goal} workout${w.goal>1?'s':''}</b><div class="week">${Array.from({length:Math.max(w.goal,w.done)},(_,i)=>`<i class="${i<w.done?'on':''}"></i>`).join('')}</div><p class="sm mut">${msg}${w.streak>1?` · ${w.streak} active weeks in a row 🔥`:''} <span class="flag">(streak rule: placeholder)</span></p></div>`}
+ return `<div class="card" id="weekCard"><b>This week: ${w.done} of ${w.goal} workout${w.goal>1?'s':''}</b><div class="week">${Array.from({length:Math.max(w.goal,w.done)},(_,i)=>`<i class="${i<w.done?'on':''}"></i>`).join('')}</div><p class="sm mut">${msg}${w.streak>1?` · ${w.streak} active weeks in a row 🔥`:''}</p></div>`}
 function nextWorkoutText(){const pl=P().plan;if(pl.variable)return 'Next: whenever suits you this week.';for(let i=1;i<=7;i++){const d=new Date(appNow()+i*DAYMS),wd=WD[d.getDay()],wk=pl.weeks[Math.floor((calib().elapsed+i)/7)%2],s=wk.find(x=>x.day===wd);if(s)return `Next workout: ${i===1?'tomorrow':wd} · ${s.type}.`}return ''}
 function plainChanges(D){D=D.filter(d=>d.code!=='RETAIN');if(!D.length)return '<p class="sm">Nothing changed — same plan next time. Steady is good.</p>';
  return D.map(d=>`<div class="chg">${d.pattern?`<b>${PSHORT[d.pattern]||d.pattern}:</b> `:''}${esc(d.msg)}</div>`).join('')}
@@ -129,7 +131,7 @@ SC.today=()=>{const p=P();if(!E())return `<h1>Today</h1><p>Finish the check-in f
  const tri=triage();
  if(!(CI&&CI.complete)&&!S.ciOpen){h+=`${safe('STOP')}<button class="btn xl" id="quickStart" onclick="quickStart()">I feel good — start workout</button><button class="btn sec" id="somethingOff" onclick="S.ciOpen=true;render()">Not 100% today? Quick check-in first</button>`;return h+extras()+devBox()}
  h+=checkinForm();
- if(CI&&CI.complete){h+=`<div class="card" id="triage">${tri.short?`<b>Shorter version suggested</b> — ${esc(tri.reasons.join(', '))}. 1 set each. Showing up still counts. <span class="flag">(triage rule: placeholder)</span>`:'<b>Full version — you\'re good to go.</b>'}
+ if(CI&&CI.complete){h+=`<div class="card" id="triage">${tri.short?`<b>Shorter version suggested</b> — ${esc(tri.reasons.join(', '))}. 1 set each. Showing up still counts.`:'<b>Full version — you\'re good to go.</b>'}
   ${tri.skip.length?`<p>Left out today because of pain: <b>${tri.skip.map(x=>PSHORT[x]).join(', ')}</b>.</p>${safe('PAIN')}`:''}
   ${tri.hkHint?`<p class="sm mut">Simulated Apple Health: ${tri.hkHint}</p>`:''}</div>
   ${safe('STOP')}<button class="btn xl" id="startSession" onclick="startSession(${tri.short?"'short'":"'full'"})">Start ${tri.short?'short ':''}workout</button>
@@ -174,7 +176,7 @@ function startSession(triageMode){const mt=modToday();if(mt.short)triageMode='sh
  W={triage:triageMode,slotType:slot.type,planned:slot.warmup+slot.main+slot.cooldown,rx,i:0,set:0,phase:'intro',sets:[],results:[],startedAt:nowISO(),t0:Date.now(),pre,checkin:CI?{...CI}:null,painPatterns:tri.skip};
  rx.forEach(r=>{if(r.skipToday)W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'checkinPain'});else if(r.modSkip)W.results.push({pattern:r.pattern,lvl:r.lvl,sets:[],skipped:true,reason:'modified'})});
  W.rx=rx.filter(r=>!r.skipToday&&!r.modSkip);
- logEv('session_started',{triage:triageMode,prescriptionSnapshot:rx,checkin:W.checkin,config:FC_CONFIG.RESEARCH_NEEDED});
+ logEv('session_started',{triage:triageMode,prescriptionSnapshot:rx,checkin:W.checkin,config:FC_CONFIG.ALL});
  if(!W.rx.length)return finishSession(false);go('session');sayPhase()}
 const cur=()=>W.rx[W.i];
 function unit(r){return r.kind==='hold'?'seconds':r.kind==='time'?'minutes':'reps'}
@@ -185,7 +187,7 @@ SC.session=()=>{if(!W)return `<p>No session running.</p><button class="btn" oncl
  case 'run':return head+`${demoBox(r.name,true)}<div class="big" id="t">0</div><p class="mut">${r.kind==='reps'?'Count your reps. Tap Done when finished.':r.kind==='hold'?`Hold up to ${r.hi} s. Tap Done when you stop.`:`About ${r.target} min at a pace where you can talk.`}</p><p class="cue">Breathe out as you push. Keep breathing.</p><p class="sm mut" id="heard"></p><button class="btn xl" id="done" onclick="setDone()">Done</button>${stopB}`;
  case 'measure':{const vals=[];const lo=r.kind==='time'?1:Math.max(0,r.lo-4),hi=r.hi+(r.kind==='hold'?10:2),st=r.kind==='hold'?5:1;for(let v=lo;v<=hi;v+=st)vals.push(v);if(W.timed!=null&&!vals.includes(W.timed))vals.push(W.timed);vals.sort((a,b)=>a-b);
   return head+`<h2>How many ${unit(r)}?</h2>${W.timed!=null?`<p class="sm mut">Timer says about ${W.timed}.</p>`:''}<div class="chips">${vals.map(v=>`<button class="chip" data-n="${v}" onclick="logSet(${v})">${v}</button>`).join('')}</div><button class="btn sec" id="lostCount" onclick="logSet(null)">Not sure / lost count</button>`}
- case 'rest':return head+`<h2>Rest</h2><div class="big" id="t">${W.restLeft}</div>${gentleMode()?'<p class="sm mut">Gentle mode: rest can\'t be skipped.</p>':'<button class="btn sec" id="skipRest" onclick="endRest()">Skip rest</button>'}${stopB}`;
+ case 'rest':return head+`<h2>Rest</h2><div class="big" id="t">${W.restLeft}</div><button class="btn sec" id="moreRest" onclick="moreRest()">Need more rest? +${CX.restExtendSec} s</button>${gentleMode()?'<p class="sm mut">Gentle mode: rest can\'t be skipped.</p>':'<button class="btn sec" id="skipRest" onclick="endRest()">Skip rest</button>'}${stopB}`;
  case 'effort':return head+`<h2>How hard was that?</h2><div class="list chips">${[['easy','Easy — could do a lot more'],['okay','Okay — a few more in the tank'],['hard','Hard — little or nothing left']].map(([v,l])=>`<button class="chip" data-effort="${v}" onclick="setEff('${v}')">${l}</button>`).join('')}</div>`;
  case 'pain':return head+`<h2>Any pain during that one?</h2><p class="sm mut">Not normal muscle effort — pain.</p><div class="row"><button class="btn sec" id="painNo" onclick="setPainEx(false)">No</button><button class="btn sec" id="painYes" onclick="setPainEx(true)">Yes</button></div>`;
  case 'sharp':return head+`<h2>Is it sharp, or getting worse?</h2>${safe('PAIN')}<div class="row"><button class="btn sec" id="sharpNo" onclick="painSharp(false)">No</button><button class="btn red" id="sharpYes" onclick="painSharp(true)">Yes</button></div>`;
@@ -203,8 +205,8 @@ function goSet(){const r=cur();W.phase='run';W.ts=Date.now();render();sayPhase()
 function setDone(){if(!W||W.phase!=='run')return;clearInterval(timerI);const r=cur(),s=Math.round((Date.now()-W.ts)/1000);
  W.timed=r.kind==='hold'?s:r.kind==='time'?(DEV.fast?r.target:Math.max(1,Math.round(s/60))):null;W.phase='measure';render();sayPhase()}
 function logSet(n){if(!W||W.phase!=='measure')return;unlisten();const r=cur();W.sets.push(n);logEv('set_logged',{pattern:r.pattern,lvl:r.lvl,set:W.set+1,value:n,unit:unit(r)});W.set++;W.timed=null;
- if(W.set<r.sets){W.phase='rest';W.restLeft=DEV.fast?1:CX.restSec[gentleMode()?'gentle':'standard'];render();speak('Rest.');const t0=Date.now(),dur=W.restLeft;
-  tick(()=>{W.restLeft=Math.max(0,Math.ceil(dur-(Date.now()-t0)/1000));const el=document.getElementById('t');if(el)el.textContent=W.restLeft;if(W.restLeft<=0)endRest()})}
+ if(W.set<r.sets){W.phase='rest';W.restLeft=DEV.fast?1:CX.restSec[gentleMode()?'gentle':'standard'];render();speak('Rest.');const t0=Date.now();W.restDur=W.restLeft;
+  tick(()=>{W.restLeft=Math.max(0,Math.ceil(W.restDur-(Date.now()-t0)/1000));const el=document.getElementById('t');if(el)el.textContent=W.restLeft;if(W.restLeft<=0)endRest()})}
  else{W.phase='effort';render();sayPhase()}}
 function endRest(){clearInterval(timerI);if(!W||W.phase!=='rest')return;W.phase='run';W.ts=Date.now();goSet()}
 function setEff(v){if(!W||W.phase!=='effort')return;W.effort=v;W.phase='pain';render();sayPhase()}
@@ -227,7 +229,7 @@ SC.sessionDone=()=>{const s=(P().sessions||[]).find(x=>x.id===S.lastSession);if(
  ${s.stopWhy==='sharpPain'?safe('PAIN')+safe('STOP'):''}
  <p>${s.stopped?'Listening to your body is part of training. Anything you did still counts.':'Great job. Every workout teaches me more about what suits you.'}</p>
  <div class="card"><b>What changed and why</b>${plainChanges(s.decisions)}</div>
- <div class="card"><b>Workout score: <span id="score">${s.score.score==null?'—':s.score.score}</span>${s.score.score==null?'':'/100'}</b><p class="sm mut">${esc(s.score.why)} It shows how much of today's plan you did, not a fitness grade. <span class="flag">(formula: placeholder)</span></p></div>
+ <div class="card"><b>Workout score: <span id="score">${s.score.score==null?'—':s.score.score}</span>${s.score.score==null?'':'/100'}</b><p class="sm mut">${esc(s.score.why)} It shows how much of today's plan you did, not a fitness grade.</p></div>
  <div class="card"><b>This week: ${w.done} of ${w.goal}</b><div class="week">${Array.from({length:Math.max(w.goal,w.done)},(_,i)=>`<i class="${i<w.done?'on':''}"></i>`).join('')}</div><p class="sm mut">${esc(nextWorkoutText())}</p></div>
  <button class="btn xl" id="backToday" onclick="S.hist=[];go('today',false)">Done</button>`};
 function decList(D){if(!D.length)return '<p class="mut">No changes.</p>';return D.map(d=>`<div class="dec"><span class="code">${d.code}</span> ${d.pattern?`<b>${PSHORT[d.pattern]||d.pattern}</b>`:''}<br><span class="sm">${esc(d.msg)}</span><br><span class="sm mut">${fmtDay(d.at)} · session ${d.session}</span></div>`).join('')}
@@ -245,7 +247,7 @@ SC.learned=()=>{if(!E())return '<p>Start your plan first.</p>';const c=calib(),n
  let h=`<h1>Your progress</h1>${weekCard()}<h2>${c.complete?"Here's what I learned":'What I\'ve learned so far'}</h2><p class="sm mut">Day ${c.day} · ${full.length} workouts · ${Object.keys(P().touch||{}).length} rest-day check-ins. ${c.complete?'':'Still getting to know you — treat this as a starting point.'}</p>${cards}
  <div class="card"><b>Your routine</b><p class="sm">Usual workout time: ${full.length>=3?nudgeTime():'unknown yet'}<br>Real session length: ${avgA==null?'unknown yet':(avgA<1?'under 1 min':avgA+' min')} (planned ${P().plan.minutes} min)</p></div>`;
  if(c.floorMet&&avgA!=null&&avgA>=1&&!(typeof DEV!=='undefined'&&DEV.fast)&&avgA<CX.proposeShorterIfActualBelow*P().plan.minutes&&!P().proposalAnswered){const nm=[10,15,20,30].filter(v=>v>=avgA)[0]||10;
-  h+=`<div class="card" id="proposal"><b>Suggestion:</b> your sessions run about ${avgA} min. Plan ${nm}-minute sessions instead? Nothing changes unless you say yes. <span class="flag">(threshold: placeholder)</span>
+  h+=`<div class="card" id="proposal"><b>Suggestion:</b> your sessions run about ${avgA} min. Plan ${nm}-minute sessions instead? Nothing changes unless you say yes.
   <div class="row"><button class="btn" onclick="answerProposal(${nm})">Yes, change it</button><button class="btn sec" onclick="answerProposal(null)">Keep as is</button></div></div>`}
  return h+`<details class="more" id="advanced"><summary>Advanced: how your plan has changed</summary><button class="btn sec" id="openDecisions" onclick="go('decisions')">Open the plan change log</button></details>`};
 function answerProposal(m){P().proposalAnswered=nowISO();if(m){P().targetMinutes=m;P().plan=buildPlan()}logEv('plan_change_proposal',{accepted:!!m,minutes:m});save();render()}
@@ -265,7 +267,7 @@ SC.settings=()=>{const p=P(),days=p.hs.answeredAt?Math.floor((appNow()-Date.pars
  <button class="chip ${p.voiceCoaching?'on':''}" id="voiceTog" onclick="P().voiceCoaching=!P().voiceCoaching;save();render()">Voice coaching</button></div>
  <button class="btn sec" id="remBtn" onclick="go('reminders')">Reminders</button><button class="btn sec" id="hkBtn" onclick="go('health')">Apple Health (simulated)</button></div>
  <div class="card"><h2>Your data</h2><p class="sm">Everything stays on this device.</p><button class="btn sec" id="exportBtn" onclick="exportLog()">Export my data (JSON)</button><details class="more"><summary>Advanced</summary><button class="btn sec" onclick="showLog()">View event log</button><button class="btn sec" onclick="go('decisions')">Plan change log</button></details><button class="btn red" onclick="resetAll()">Reset everything</button></div>
- <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v${APPVER} · draft · values marked "placeholder" are not decided</p>${DEV.on?devBox():''}`};
+ <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v${APPVER} · draft</p>${DEV.on?devBox():''}`};
 function docClear(v){if(!v)return;P().doctorClearanceSelfReportedAt=new Date(v+'T12:00:00').toISOString();logEv('doctor_clearance_self_report',{date:v});computeSafety();save();render();toast(gentleMode()?'Saved. Gentle mode stays on for now.':'Saved. Gentle mode is off.')}
 let verN=0;function verTap(){if(++verN>=5){DEV.on=true;lsSet('fcai_proto_dev',1);toast('Developer tools on');render()}}
 function exportLog(){const blob=new Blob([JSON.stringify({exportedAtUTC:new Date().toISOString(),simulatedDayOffset:simOffset(),state:S,events:lsGet(KL)||[]},null,2)],{type:'application/json'});
@@ -273,7 +275,7 @@ function exportLog(){const blob=new Blob([JSON.stringify({exportedAtUTC:new Date
 SC.reminders=()=>{const p=P(),sup='Notification' in window,perm=sup?Notification.permission:'unsupported';
  return `<h1>Reminders</h1>${chips('nudgeMode',[['fixedTime','Around a set time'],['learned','Learn my best time'],['off','No reminders']])}
  ${p.nudgeMode==='fixedTime'?`<input type="time" value="${esc(p.nudgeTime)}" onchange="P().nudgeTime=this.value;save()" aria-label="Reminder time">`:''}
- ${p.nudgeMode==='learned'?`<p class="sm">Current guess: ${nudgeTime()} ${(p.sessions||[]).length<3?'(default until we see a few workouts — placeholder)':''}</p>`:''}
+ ${p.nudgeMode==='learned'?`<p class="sm">Current guess: ${nudgeTime()} ${(p.sessions||[]).length<3?'(default until we see a few workouts)':''}</p>`:''}
  <p class="sm">At most ${CA.maxNudgesPerDay} reminder a day, only on planned days, never after you've trained. No guilt trips.</p>
  <div class="card"><b>Phone notifications (demo)</b><p class="sm">Status: <span id="notifPerm">${perm}</span></p>
  <p class="sm mut">On iPhone, web notifications only work after "Add to Home Screen" (iOS 16.4+). The real app would use native notifications. In this prototype reminders show inside the app.</p>
@@ -282,7 +284,7 @@ SC.reminders=()=>{const p=P(),sup='Notification' in window,perm=sup?Notification
 function testNotif(){try{if(Notification.permission==='granted'){new Notification('FitcoachAI',{body:nudgeCopy()});toast('Sent.')}else toast('Notifications are not allowed — reminders stay in the app.')}catch(e){toast('This browser blocked it — reminders stay in the app.')}logEv('notification_test')}
 SC.health=()=>{const hk=P().hk||{},rows=[6,5,4,3,2,1,0].map(n=>{const k=prevKey(n),d=hkDay(k),u=v=>v==null?'<i class="mut">unknown</i>':v;return `<tr><td>${k.slice(5)}</td><td>${u(d.steps)}</td><td>${d.sleepH==null?u(null):d.sleepH+' h'}</td><td>${u(d.workouts)}</td></tr>`}).join('');
  return `<h1>Apple Health</h1><div class="sim" id="hkSim">SIMULATED DATA — this web prototype can't read Apple Health. Numbers below are made up.</div>
- <p>Optional and <b>read-only</b>: we would only read steps, sleep and workouts, never write. Missing data shows as <b>unknown</b> and is never guessed. Sleep is only used as a hint for a lighter day.</p>
+ <p>Optional and <b>read-only</b>: we would only read sleep and workouts, never write. Missing data shows as <b>unknown</b> and is never guessed. Sleep is only used as a hint for a lighter day.</p>
  <button class="btn ${hk.connected?'sec':''}" id="hkToggle" onclick="P().hk={connected:${!hk.connected},simulated:true};logEv('healthkit_simulated_${hk.connected?'disconnect':'connect'}');save();render()">${hk.connected?'Disconnect (simulated)':'Connect (simulated)'}</button>
  ${hk.connected?`<table class="hk"><tr><th>Day</th><th>Steps</th><th>Sleep</th><th>Workouts</th></tr>${rows}</table>`:'<p class="mut">Not connected. Everything works without it.</p>'}<button class="btn sec" onclick="go('settings',false)">Back</button>`};
 
