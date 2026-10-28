@@ -84,7 +84,7 @@ const doneToday=()=>(P().sessions||[]).find(s=>s.dateKey===todayKey()&&!s.stoppe
 function healthDue(){const a=P().hs.answeredAt;return !a||appNow()-Date.parse(a)>CA.rescreenDays*DAYMS}
 /* Simulated Apple Health: deterministic per date; some values deliberately unknown. */
 function hkDay(key){let h=0;for(const c of key)h=(h*31+c.charCodeAt(0))>>>0;const unk=n=>(h>>n)%5===0;
- return {steps:unk(1)?null:2000+(h%9000),sleepH:unk(3)?null:Math.round((5+(h%40)/10)*10)/10,workouts:unk(5)?null:(h>>7)%2}}
+ return {sleepH:unk(3)?null:Math.round((5+(h%40)/10)*10)/10,workouts:unk(5)?null:(h>>7)%2}}
 function prevKey(n){const d=new Date(appNow()-n*DAYMS);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 
 /* ---------- reminders (capped: at most CA.maxNudgesPerDay per day) ---------- */
@@ -266,7 +266,7 @@ SC.settings=()=>{const p=P(),days=p.hs.answeredAt?Math.floor((appNow()-Date.pars
  <div class="card"><h2>Coaching</h2><div class="chips"><button class="chip ${p.coachingStyle==='calm'?'on':''}" onclick="P().coachingStyle='calm';save();render()">Calm</button><button class="chip ${p.coachingStyle==='direct'?'on':''}" onclick="P().coachingStyle='direct';save();render()">Direct</button>
  <button class="chip ${p.voiceCoaching?'on':''}" id="voiceTog" onclick="P().voiceCoaching=!P().voiceCoaching;save();render()">Voice coaching</button></div>
  <button class="btn sec" id="remBtn" onclick="go('reminders')">Reminders</button><button class="btn sec" id="hkBtn" onclick="go('health')">Apple Health (simulated)</button></div>
- <div class="card"><h2>Your data</h2><p class="sm">Everything stays on this device.</p><button class="btn sec" id="exportBtn" onclick="exportLog()">Export my data (JSON)</button><details class="more"><summary>Advanced</summary><button class="btn sec" onclick="showLog()">View event log</button><button class="btn sec" onclick="go('decisions')">Plan change log</button></details><button class="btn red" onclick="resetAll()">Reset everything</button></div>
+ <div class="card"><h2>Your data</h2><p class="sm">Everything stays on this device.</p><button class="btn sec" id="exportBtn" onclick="exportLog()">Export my data (JSON)</button><details class="more"><summary>Advanced</summary><button class="btn sec" onclick="showLog()">View event log</button><button class="btn sec" onclick="go('decisions')">Plan change log</button></details><button class="btn red" onclick="resetAll()" id="deleteData">Delete my data</button></div>
  <p class="sm mut" id="ver" onclick="verTap()">FitcoachAI prototype v${APPVER} · draft</p>${DEV.on?devBox():''}`};
 function docClear(v){if(!v)return;P().doctorClearanceSelfReportedAt=new Date(v+'T12:00:00').toISOString();logEv('doctor_clearance_self_report',{date:v});computeSafety();save();render();toast(gentleMode()?'Saved. Gentle mode stays on for now.':'Saved. Gentle mode is off.')}
 let verN=0;function verTap(){if(++verN>=5){DEV.on=true;lsSet('fcai_proto_dev',1);toast('Developer tools on');render()}}
@@ -282,11 +282,11 @@ SC.reminders=()=>{const p=P(),sup='Notification' in window,perm=sup?Notification
  ${sup?`<button class="btn sec" id="notifAsk" onclick="Notification.requestPermission().then(r=>{logEv('notification_permission',{result:r});render()})">Allow notifications</button><button class="btn sec" id="notifTest" onclick="testNotif()">Send a test reminder</button>`:'<p class="sm">Not supported in this browser.</p>'}</div>
  <button class="btn" onclick="go('settings',false)">Done</button>`};
 function testNotif(){try{if(Notification.permission==='granted'){new Notification('FitcoachAI',{body:nudgeCopy()});toast('Sent.')}else toast('Notifications are not allowed — reminders stay in the app.')}catch(e){toast('This browser blocked it — reminders stay in the app.')}logEv('notification_test')}
-SC.health=()=>{const hk=P().hk||{},rows=[6,5,4,3,2,1,0].map(n=>{const k=prevKey(n),d=hkDay(k),u=v=>v==null?'<i class="mut">unknown</i>':v;return `<tr><td>${k.slice(5)}</td><td>${u(d.steps)}</td><td>${d.sleepH==null?u(null):d.sleepH+' h'}</td><td>${u(d.workouts)}</td></tr>`}).join('');
+SC.health=()=>{const hk=P().hk||{},RT=CX.healthReadTypes||['sleep','workouts'],rows=[6,5,4,3,2,1,0].map(n=>{const k=prevKey(n),d=hkDay(k),u=v=>v==null?'<i class="mut">unknown</i>':v;return `<tr><td>${k.slice(5)}</td>${RT.includes('sleep')?`<td>${d.sleepH==null?u(null):d.sleepH+' h'}</td>`:''}${RT.includes('workouts')?`<td>${u(d.workouts)}</td>`:''}</tr>`}).join('');
  return `<h1>Apple Health</h1><div class="sim" id="hkSim">SIMULATED DATA — this web prototype can't read Apple Health. Numbers below are made up.</div>
  <p>Optional and <b>read-only</b>: we would only read sleep and workouts, never write. Missing data shows as <b>unknown</b> and is never guessed. Sleep is only used as a hint for a lighter day.</p>
  <button class="btn ${hk.connected?'sec':''}" id="hkToggle" onclick="P().hk={connected:${!hk.connected},simulated:true};logEv('healthkit_simulated_${hk.connected?'disconnect':'connect'}');save();render()">${hk.connected?'Disconnect (simulated)':'Connect (simulated)'}</button>
- ${hk.connected?`<table class="hk"><tr><th>Day</th><th>Steps</th><th>Sleep</th><th>Workouts</th></tr>${rows}</table>`:'<p class="mut">Not connected. Everything works without it.</p>'}<button class="btn sec" onclick="go('settings',false)">Back</button>`};
+ ${hk.connected?`<table class="hk"><tr><th>Day</th>${RT.includes('sleep')?'<th>Sleep</th>':''}${RT.includes('workouts')?'<th>Workouts</th>':''}</tr>${rows}</table>`:'<p class="mut">Not connected. Everything works without it.</p>'}<button class="btn sec" onclick="go('settings',false)">Back</button>`};
 
 /* ---------- DEV: simulate days (hidden: ?dev=1 or tap the version line 5x) ---------- */
 function devBox(){if(!DEV.on)return '';return `<div class="card" id="devBox" style="border:1px dashed #a78bfa"><b>Developer: simulate days</b><p class="sm mut">Moves this device's app clock forward. Simulated events are tagged in the log.</p>

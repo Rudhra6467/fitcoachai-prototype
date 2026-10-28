@@ -12,15 +12,15 @@ The original placeholder table follows, for reference. "Placeholder used" is now
 
 ## Original notes
 
-All of these are placeholders. They live in `js/config.js` → `FC_CONFIG.RESEARCH_NEEDED` (R1–R26), or in the code where noted (X1–X9). They are marked "RESEARCH NEEDED / not decided". The values that are approved are in `FC_CONFIG.APPROVED`:
+Before Decision Round 1 these were all placeholders in `FC_CONFIG.RESEARCH_NEEDED` (R1–R26) or in the code (X1–X9). The rules approved earlier in the spec (also in `FC_CONFIG.APPROVED`) are:
 - 1 step-up per session
 - a bad day never lowers the level
 - the injury gate: 3 pain-free sessions over at least 7 days
-- a 7-day calibration floor
+- calibration ends on data quality, never on time (the 7-day floor was retired in v0.6, per CORE-PRODUCT-LOGICS §3)
 - a 90-day re-screen
 - at most 1 nudge per day
 
-Changing a placeholder only means editing the config. The engine reads every threshold from it.
+Changing a value only means editing the config; the engine reads its thresholds from it. A few APPROVED keys are declarative invariants (`badDayLowersLevel`, `maxLevelChangePerStep`, `startEveryoneAsBeginner`, `streakUnit`): the code enforces them and the tests assert them, but they are not read at runtime.
 
 | ID | What it is | Placeholder used | Why research is needed | Suggested sources / questions |
 |---|---|---|---|---|

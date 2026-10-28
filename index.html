@@ -88,7 +88,7 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 <div id="cap" aria-live="polite"></div>
 <div id="toast" role="status"></div>
 <script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
-<script src="js/config.js?v=0.9.0"></script>
+<script src="js/config.js?v=0.9.1"></script>
 <script>var OBD=(window.FC_CONFIG&&FC_CONFIG.APPROVED&&FC_CONFIG.APPROVED.onboardingDefaults)||{coachingStyle:"calm",voiceCoaching:true,nudgeMode:"learned",healthKit:null};</script>
 <script>window.onerror=function(m,u,l){var a=document.getElementById('app');if(a)a.innerHTML='<h1>Something went wrong</h1><p>The prototype hit a script error and could not start.</p><pre style="white-space:pre-wrap;font-size:12px">'+String(m)+' (line '+l+')</pre><button class="btn" onclick="localStorage.clear();location.reload()">Reset &amp; reload</button>';};</script>
 <noscript><p style="padding:20px">This prototype needs JavaScript. Open it in Safari or Chrome (not a file preview).</p></noscript>
@@ -118,13 +118,13 @@ function freshState(){return{screen:'s1',hist:[],returnTo:null,stopReason:null,p
  ageRange:null,sexForReference:null,primaryGoal:'habit',goalSetAt:null,experience:null,
  bodyAreas:[],bodyNone:false,movementNeeds:[],limbDifference:[],
  hs:{h1:null,h2:null,h3:null,h4:null,h5:null,h6:null,chestRecent:null,faintRecent:null,answeredAt:null,version:'hs-1.0'},
- postpartum:{status:null,birthMonth:'',birthType:null,clearance:null},postpartumMode:false,
+ bodyAreaHistory:[],postpartum:{status:null,birthMonth:'',birthType:null,clearance:null},postpartumMode:false,
  safetyMode:'standard',safetyModeReasons:[],doctorClearanceSelfReportedAt:null,
  jobActivity:null,workPattern:null,availableItems:[],quietMode:false,
  days:'3',targetMinutes:20,coachingStyle:OBD.coachingStyle,voiceCoaching:OBD.voiceCoaching,nudgeMode:OBD.nudgeMode,nudgeTime:'18:00',
  healthKitRequestedAt:null,healthKitChoice:null,micAuthorized:null,speechAuthorized:null,
  patternReadiness:{},baselineResults:[],baselineDeferred:false,baselineStopped:false,onboardingCompletedAt:null,profileVersion:1}}}
-const SCHEMA=4,APPVER='0.9.0';
+const SCHEMA=4,APPVER='0.9.1';
 /* Versioned storage: fill fields missing from older prototype data (v0.1-v0.4 had no schemaVersion). */
 function migrateState(o){if(!o||typeof o!=='object'||!o.p||typeof o.p!=='object')return null;const from=o.schemaVersion||1;if(from>SCHEMA)return o;
  const f=freshState();for(const k in f)if(!(k in o))o[k]=f[k];for(const k in f.p)if(!(k in o.p))o.p[k]=f.p[k];
@@ -254,7 +254,7 @@ SC.s2=()=>`<h1>Your data stays on your phone.</h1><ul>
 <li>There's no account and no sign-up.</li><li>Your answers, workouts, and health info are stored <b>only on this iPhone</b>.</li>
 <li>We don't send your data to our servers — we don't have any.</li><li>You can delete everything at any time in <b>Settings → Delete my data</b>.</li></ul>
 <p class="mut"><i>Heads up: if you use iCloud or computer backups for your iPhone, those backups may include FitcoachAI data, protected by Apple. If you delete the app without a backup, your history is gone.</i></p>
-<p class="mut sm">(Prototype: data is saved in this browser's localStorage. Use <b>Reset</b> at the top to delete it.)</p>
+<p class="mut sm">(Prototype: data is saved in this browser's localStorage. Use <b>Settings → Delete my data</b> (or <b>Reset</b> at the top) to delete it.)</p>
 <button class="btn" id="next" onclick="next()">Sounds good</button>`;
 SC.s3=()=>`<h1>A little about you</h1><h2>How old are you?</h2>${chips('ageRange',AGES)}
 <h2>What sex were you assigned at birth?</h2><p class="mut sm"><i>This only helps us compare your check-in results to typical ranges.</i></p>${chips('sexForReference',SEX)}
@@ -274,7 +274,8 @@ function svgBody(side){const on=r=>P().bodyAreas.some(a=>a.region===r)?'on':'';
  const trunk=f?[Rc('chest',80,74,60,36),Rc('abdomen',84,112,52,40),Rc('pelvic',90,154,40,22)]:[Rc('neck',97,50,26,18),Rc('upperBack',80,72,60,40),Rc('lowerBack',84,114,52,36)];
  const body=`<g class="body"><circle cx="110" cy="28" r="20"/><rect x="101" y="46" width="18" height="18"/><path d="M70 66 h80 l22 112 h-16 l-18-78 v78 l8 170 h-22 l-12-140 h-4 l-12 140 h-22 l8-170 v-78 l-18 78 h-16z"/></g>`;
  return `<svg viewBox="0 0 220 350" role="img" aria-label="${side} body map">${body}${trunk.join('')}${limbs.join('')}<text x="4" y="12" fill="#9aa4b8" font-size="10">${f?'Your right':'Your left'}</text><text x="216" y="12" fill="#9aa4b8" font-size="10" text-anchor="end">${f?'Your left':'Your right'}</text></svg>`}
-function mapTap(r){if(P().bodyAreas.some(a=>a.region===r)){P().bodyAreas=P().bodyAreas.filter(a=>a.region!==r);logEv('body_area_removed',{region:r});save();render();toast(`Removed ${REGIONS[r]}`);return}openRegion(r)}
+function archiveArea(a,why){const p=P();p.bodyAreaHistory=p.bodyAreaHistory||[];if(a)p.bodyAreaHistory.push(Object.assign({},a,{archivedAt:nowISO(),archivedWhy:why}))}
+function mapTap(r){if(P().bodyAreas.some(a=>a.region===r)){archiveArea(P().bodyAreas.find(a=>a.region===r),'removed');P().bodyAreas=P().bodyAreas.filter(a=>a.region!==r);logEv('body_area_removed',{region:r});save();render();toast(`Removed ${REGIONS[r]}`);return}openRegion(r)}
 SC.s6=()=>{const p=P();return `<h1>Anything we should be careful with?</h1><p class="mut"><i>Tap any area that's sore, injured, or needs extra care. Tap again to remove it.</i></p>
 <div class="row"><button class="chip ${mapSide==='front'?'on':''}" onclick="mapSide='front';render()">Front</button><button class="chip ${mapSide==='back'?'on':''}" onclick="mapSide='back';render()">Back</button></div>
 <div class="bm">${svgBody(mapSide)}</div>
@@ -303,8 +304,8 @@ function renderSheet(){const a=draftArea,n=REGIONS[a.region];
  ${P().bodyAreas.some(x=>x.region===a.region)?`<button class="btn sec" onclick="removeArea()">Remove this area</button>`:''}<button class="btn sec" onclick="draftArea=null;closeSheet()">Cancel</button>`)}
 function sheetSet(k,v,multi){const a=draftArea;if(multi){if(v==='notSure')a.triggers=a.triggers.includes(v)?[]:[v];else a.triggers=a.triggers.includes(v)?a.triggers.filter(x=>x!==v):a.triggers.filter(x=>x!=='notSure').concat(v)}else a[k]=v;renderSheet()}
 function saveArea(){const a=draftArea;if(!a.triggers.length)a.triggers=['notSure'];const t=nowISO();a.reportedAt=a.reportedAt||t;a.updatedAt=t;a.history=(a.history||[]).concat({at:t,status:a.status,triggers:a.triggers,painScore:a.painScore});
- P().bodyAreas=P().bodyAreas.filter(x=>x.region!==a.region).concat(a);P().bodyNone=false;logEv('body_area_saved',a);draftArea=null;closeSheet();computeSafety();save();render()}
-function removeArea(){P().bodyAreas=P().bodyAreas.filter(x=>x.region!==draftArea.region);logEv('body_area_removed',{region:draftArea.region});draftArea=null;closeSheet();save();render()}
+ {const old=P().bodyAreas.find(x=>x.region===a.region);if(old)archiveArea(old,'updated')}P().bodyAreas=P().bodyAreas.filter(x=>x.region!==a.region).concat(a);P().bodyNone=false;logEv('body_area_saved',a);draftArea=null;closeSheet();computeSafety();save();render()}
+function removeArea(){archiveArea(P().bodyAreas.find(x=>x.region===draftArea.region),'removed');P().bodyAreas=P().bodyAreas.filter(x=>x.region!==draftArea.region);logEv('body_area_removed',{region:draftArea.region});draftArea=null;closeSheet();save();render()}
 function openSheet(h){document.getElementById('sheetIn').innerHTML=h;document.getElementById('sheet').style.display='flex'}
 function closeSheet(){document.getElementById('sheet').style.display='none'}
 
@@ -612,11 +613,11 @@ function _render(){if(!SC[S.screen])S.screen='s1';const el=document.getElementBy
  if(!canBack&&!st)document.getElementById('top').innerHTML='';
  if(!['baseline','results'].includes(S.screen))document.getElementById('cap').style.display='none'}
 </script>
-<script src="js/engine.js?v=0.9.0"></script>
-<script src="js/app.js?v=0.9.0"></script>
-<script src="js/v05.js?v=0.9.0"></script>
-<script src="js/v06.js?v=0.9.0"></script>
-<script src="js/v07.js?v=0.9.0"></script>
+<script src="js/engine.js?v=0.9.1"></script>
+<script src="js/app.js?v=0.9.1"></script>
+<script src="js/v05.js?v=0.9.1"></script>
+<script src="js/v06.js?v=0.9.1"></script>
+<script src="js/v07.js?v=0.9.1"></script>
 <script type="module">
 // Optional visual extras. Lazy-loaded; any failure shows a static message and never breaks the app.
 let cur=null;const fallback3d=(el,msg)=>{el.innerHTML='<div class="fxmsg">'+msg+'</div>'};

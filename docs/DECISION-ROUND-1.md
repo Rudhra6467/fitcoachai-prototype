@@ -343,7 +343,7 @@ The citations are real sources that support the direction of each recommendation
 - **Recommendation:** DEFER, or remove the question to shorten onboarding (ties to OQ-16).
 - **Why:** Product choice.
 - **Risk if wrong:** Low.
-- **Decision:** DEFERRED — 2026-10-27, owner (vamsimadhav). **Reason:** Experience question kept but unused for tone; revisit with OQ-16 screen-count testing
+- **Decision:** DEFERRED — 2026-10-27, owner (vamsimadhav). **Reason:** Experience answer still sets the tone line only (never difficulty); the tone copy stays in RESEARCH_NEEDED until reviewed. Whether to keep the question is revisited with OQ-16 screen-count testing
 
 ### 33. R14 — Default reminder time (P3)
 

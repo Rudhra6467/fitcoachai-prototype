@@ -1,4 +1,4 @@
-# FitcoachAI — Audit handoff (prototype v0.9.0)
+# FitcoachAI — Audit handoff (prototype v0.9.1)
 
 For: co-founder review and an AI-assisted audit (Claude). Date: October 27, 2026.
 
@@ -32,11 +32,12 @@ From `README.md` → Changelog and `git log`:
 | v0.5 | `16f0e96` | Ready to try daily on iPhone: Stop button and spoken "stop" on every active screen; pause/resume after reload; installable offline PWA; iPhone fixes; backup restore; storage migration. |
 | v0.5.2 | `a86441e` | iPhone hotfix: crash guard for a stale cached config.js, `?v=` cache-busting, buttons kept clear of Safari's floating toolbar. |
 | v0.6.0 | `f814396` | Calibration phase: everyone starts at beginner level; data-driven "Getting to know you: X of 6 sessions" meter (no fixed day count); per-set timing; one-line reasons for ±1 changes; post-session check-in; Performance Score; plan built from calibration data; WebKit tests. |
+| v0.7.0 | `06a729f`, `cbfc3aa` | A "Hard" session or "Low" energy makes the next session lighter (same level, slightly lower target, can be declined). "Change something" (swap / skip / shorten with a reason, counter-offer first). "Why this workout" line. Root-cause fixes for two WebKit bugs; three.js vendored for offline use; lazy 3D; Lighthouse accessibility 95 → 100. Schema 4. |
 | v0.7.1 | `7fcb5b5` | 3D coach swapped to a CC0 Quaternius mannequin (366 KB, was the 2.93 MB Mixamo-derived Xbot). Idle animation only, as before. |
 | v0.7.2 | `8958a16` | Polish: coach auto-framing, runtime palette tint, ground shadow, loading placeholder, fade-in, failure fallback, reduced motion; caption bar no longer hides Stop on iPhone SE; small layout fixes. Lighthouse numbers in UX-AUDIT.md. |
-| v0.9.0 | (this release) | Decision Round 1 applied: 35 approved values moved to `FC_CONFIG.APPROVED`, 9 items deferred; placeholder labels removed; R12 +15 s rest button; R25 repeat-skip note; OQ-18 health copy; OQ-1a interim C-section line; `R21-placeholder` → `R21` migration. |
-| v0.8.0 | 01d9eb7 | Sit-to-stand 3D demo (CC0 Quaternius `Sitting_Exit`/`Sitting_Enter` on a simple chair) on the intro and active screens of the 3 sit-to-stand steps. No other exercise has an honest CC0 clip, so they are listed as X9. Model 502 KB. |
-| v0.7.0 | `06a729f`, `cbfc3aa` | A "Hard" session or "Low" energy makes the next session lighter (same level, slightly lower target, can be declined). "Change something" (swap / skip / shorten with a reason, counter-offer first). "Why this workout" line. Root-cause fixes for two WebKit bugs; three.js vendored for offline use; lazy 3D; Lighthouse accessibility 95 → 100. Schema 4. |
+| v0.8.0 | `01d9eb7` | Sit-to-stand 3D demo (CC0 Quaternius `Sitting_Exit`/`Sitting_Enter` on a simple chair) on the intro and active screens of the 3 sit-to-stand steps. No other exercise has an honest CC0 clip, so they are listed as X9. Model 502 KB. |
+| v0.9.0 | `5301692` | Decision Round 1 applied: 35 approved values moved to `FC_CONFIG.APPROVED`, 9 items deferred; placeholder labels removed; R12 +15 s rest button; R25 repeat-skip note; OQ-18 health copy; OQ-1a interim C-section line; `R21-placeholder` → `R21` migration. |
+| v0.9.1 | (this release) | Pre-native review (`docs/PRE-NATIVE-REVIEW.md`): doc drift fixed (retired 7-day floor, test lists, stale placeholder sections), Health screen shows only the approved read types, "Delete my data" button matches the privacy copy, removed/updated body areas kept in `bodyAreaHistory`. Decision Round 2 opened for the product conflicts with the locked doc. |
 
 ## 3. How it was built
 
@@ -50,7 +51,7 @@ From `README.md` → Changelog and `git log`:
 - A vanilla JS PWA with no build step. Classic scripts share globals and load in this order: inline script in `index.html` (onboarding, health check, baseline, storage, migration) → `js/config.js` → `js/engine.js` → `js/app.js` → `js/v05.js` → `js/v06.js` → `js/v07.js`.
 - Later version files are **override layers**: they wrap or replace earlier functions and screens (`SC.<screen>`). `js/v07.js` runs the boot and the first full render. Some v0.6 overrides were folded back into the base files in v0.7.
 - `js/engine.js` is **pure**: no clock, no randomness, and no DOM (checked by `tests/inv.js`). It also loads in Node.
-- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.9.0`) that precaches the app, three.js and the 3D model.
+- `sw.js` is a same-origin service worker with a versioned cache (`fcai-v0.9.1`) that precaches the app, three.js and the 3D model.
 
 ### File map
 | Path | Role |
@@ -92,25 +93,17 @@ export NODE_PATH=$(npm root -g)
 node tests/v07.js http://localhost:8765/
 BROWSER=webkit node tests/v07.js http://localhost:8765/   # WebKit; WEBKIT_PATH overrides the binary (tests/launch.js)
 ```
-Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v080.js` (sit-to-stand demo), `v090.js`, `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4), `v072.js` (3D coach reduced motion / fit / fallback, caption bar vs Stop). At v0.7.2 all 8 suites passed on Chromium and WebKit. At v0.7.0 all passed on Chromium and WebKit: v07 28, v06 29, v05 32, ui 32, test 28, inv 18, audit 34 taps / 15 screens.
+Suites: `inv.js` (engine invariants), `test.js` (onboarding and safety stops), `ui.js` (14 simulated days), `audit.js` (tap counts), `v05.js` (Stop, resume, offline, backup, migration), `v080.js` (sit-to-stand demo), `v090.js` (Decision Round 1), `v091.js` (pre-native fixes), `v06.js` (calibration), `v07.js` (lighter session, modification, why line, schema 4), `v072.js` (3D coach reduced motion / fit / fallback, caption bar vs Stop). At v0.9.1 all 11 suites pass on Chromium and WebKit (see README for the runner).
 
 ### Developer tools (`?dev=1`)
 On Today: **+1 day / +7 days** (moves the app clock), **Auto-play 14 days** (synthetic workouts), **Auto-play 6 sessions** (clean or messy calibration), **Real date**, and **Fast timers**. Tap the version line in Settings for more. Simulated data is tagged in the log.
 
 ## 4. The plan ahead
 
-### Open placeholders (`RESEARCH-FLAGS.md`; config `FC_CONFIG.RESEARCH_NEEDED`)
-- **Dose and progression:** R1 rep/hold/time ranges and sets; R2 ladder levels (4); R3 clean sessions before step-up, rep increment; R4 bad-session thresholds; R5 anti-thrash gap; R6 plateau responses; R7 gentle-mode cap and spacing; R12 rest between sets.
-- **Day-to-day:** R10 check-in triage; R11 check-in pain effects; R13 short-sleep threshold; R14 default nudge time; R15 short-session offer; R16 weekly goal and streak; R17 one-tap start meaning; R18 onboarding defaults.
-- **Calibration and scoring:** R19 when calibration ends (R8 superseded); R20 beginner starting steps; R21 Performance Score formula (R9 superseded for display); R22 "finished fast" cue.
-- **v0.7:** R23 post-session effects including the lighter next session; R24 experience → tone only; R25 modification path; R26 days-per-week suggestion.
-- **v0.8.0:** X9 demo animations needed (every exercise except sit-to-stand). Decisions for all open items are in `docs/DECISION-ROUND-1.md`.
-- **v0.9.0:** Decision Round 1 approved 27 Oct 2026. Still open (deferred): X6, X9, R24, OQ-1a, OQ-5, OQ-15, OQ-11, OQ-12, OQ-16. Pre-launch reviews still required for R7, OQ-17, R11, X2, X8, R17, OQ-13.
-- **v0.7.1:** X8 look of the 3D coach (placeholder art). In v0.7.2 it is tinted to the app palette at runtime only; the CC0 file is unchanged.
-- **Code heuristics:** X1 evidence tiers; X2 tolerance labels; X3 rest-day touchpoint; X4 measure-chip ranges; X5 step-up verification; X6 injury flag from onboarding; X7 reminder demo.
-
-### 11 open questions in the onboarding spec (§7.1)
-OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinical sign-off and localisation of the safety wording; OQ-6b whether people 70+ default to gentle mode; OQ-9 holidays (locale vs Calendar access); OQ-11 backups/export; OQ-12 optional first name for voice; OQ-13 voice reliability in noisy homes; OQ-15 regulatory positioning (general wellness) and App Store rules; OQ-16 screen count; OQ-17 gentle-mode details; OQ-18 Apple Health read types.
+### Still open after Decision Round 1 (`RESEARCH-FLAGS.md`, `docs/DECISION-ROUND-1.md`)
+- **Deferred (9):** X6 injury-map physio review; X9 demo animation budget; R24 experience → tone; OQ-1a pelvic-floor physio review (interim C-section line shipped); OQ-5 legal/clinical wording review; OQ-15 regulatory review; OQ-11 backups (native build); OQ-12 first name (pilot); OQ-16 screen count (user testing).
+- **Approved but needing review before launch:** R7, OQ-17 (physio); R11, X2 (clinical); X8 (design); R17 (pilot comparison); OQ-13 (pilot measurement).
+- **Decision Round 2** (`docs/PRE-NATIVE-REVIEW.md`): conflicts between the locked CORE-PRODUCT-LOGICS doc and the prototype, to decide before the native build.
 
 ### Next steps
 - **Native SwiftUI app.** The prototype logic (engine, config, copy) is the reference to port. The web-specific parts (service worker, Safari workarounds, localStorage) do not carry over.
@@ -130,7 +123,7 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 6. A level never changes by more than 1 per session; one bad day never lowers a level; the injury gate requires 3 pain-free sessions over at least 7 days, with no instant clearance; gentle-mode caps hold; short, lighter and swapped sessions never move a level; the engine is pure.
 
 **P1 — Conformance with the locked doc**
-7. Compare `docs/CORE-PRODUCT-LOGICS.docx` and the APPROVED items in the spec against what the code does. Anything not in the doc should be a labelled placeholder, not hard-coded.
+7. Compare `docs/CORE-PRODUCT-LOGICS.docx` and the APPROVED items against what the code does. Known conflicts are listed in `docs/PRE-NATIVE-REVIEW.md` (Decision Round 2).
 
 **P1 — Data integrity**
 8. `migrateState` handles schemas 1→4 without losing data; the event log is append-only; export and restore round-trip correctly; reload or resume mid-workout and mid-check-in works.
@@ -139,7 +132,7 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 9. No network calls with user data. The only network use should be loading the app's own files (now same-origin). No analytics. The S2 privacy copy matches the behaviour.
 
 **P1 — Honest copy**
-10. No outcome or timeline promises; plain language (grade 6–8, no jargon); "placeholder" labels visible; food guidance general only.
+10. No outcome or timeline promises; plain language (grade 6–8, no jargon); no stale "placeholder" labels for approved values; food guidance general only.
 
 **P2 — Licenses**
 11. three.js (MIT), rich-body-highlighter (MIT) and coach-mannequin.glb (Quaternius, CC0, see README credits). Check that no other assets lack a license.
@@ -157,7 +150,7 @@ OQ-1a pelvic-floor physio review of the postpartum rules; OQ-5 legal and clinica
 - Lighter sessions do not count towards finishing calibration, so it can take slightly longer (R23).
 - Pain during a modification puts the movement on hold. That is consistent with the check-in pain rule, but it has had no clinical review.
 - Lighthouse performance is about 71 because the 3D coach dominates blocking time in headless Chrome. Real iPhone performance is unmeasured.
-- Every threshold in R1–R26 and X1–X8 is a placeholder without expert validation.
+- R1–R26 and X1–X9 were approved by the owner in Decision Round 1 (27 Oct 2026) without external expert validation; the pre-launch reviews listed in §4 are still required.
 - Override layering (`v05` → `v07`) makes the call order non-obvious. It is a refactor candidate before porting.
 
 ## 6. Prompt for Claude (paste as is)

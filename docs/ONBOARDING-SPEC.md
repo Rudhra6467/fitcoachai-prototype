@@ -534,7 +534,7 @@ No plan, no assessment. Data kept on device. Hard stop triggers (**✅ APPROVED 
 | Physical / very heavy | Lower volume and intensity on work days, especially for patterns used at work (lifting = hinge/carry); suggests recovery/mobility sessions after shifts; strength days placed on days off where known. Very heavy → max 3 hard sessions/week by default. |
 | Caring at home | Short, interruptible sessions (blocks of 3–5 min that can be paused); quiet mode suggested. |
 | Night/rotating/changing shifts | **Shift-worker mode:** plan is anchored to *wake time*, not clock time; no fixed morning reminders; no hard sessions in the 2 hours before planned sleep (learned in calibration); after a night shift, default suggestion is light movement only. |
-| Varies | Calibration asks daily "How physical was today?" for the first 7 days. |
+| Varies | Calibration asks daily "How physical was today?" until calibration ends (data-driven, no fixed day count). |
 
 **Stored fields:** `jobActivity: enum { sitting, onFeet, physical, veryHeavy, caregiving, notWorking, varies }`, `workPattern: enum { regularDay, eveningNight, rotating, irregular, notApplicable }`.
 
@@ -757,7 +757,7 @@ On "Start check-in", if voice is on: request **Microphone** and **Speech Recogni
 
 ---
 
-## 4. 7-day calibration (what we learn instead of asking)
+## 4. Calibration (what we learn instead of asking; ends on data quality, never on a fixed day count — CORE-PRODUCT-LOGICS §3)
 
 | Learned | How | Feeds |
 |---|---|---|
@@ -770,7 +770,7 @@ On "Start check-in", if voice is on: request **Microphone** and **Speech Recogni
 | Holidays/routine breaks | Device locale + time zone changes + missed-day patterns | Plan pauses, nudges |
 | What keeps them coming back | Response to nudges, streak vs. no-streak reactions | Motivation tactics, tone |
 
-At day 7: a short "Here's what I learned" screen; any plan change (days, minutes, times) needs the user's OK. Calibration never raises intensity in conservative mode beyond the conservative caps.
+When calibration ends (R19, approved): a short "Your plan is ready" screen; any plan change (days, minutes, times) needs the user's OK. Calibration never raises intensity in conservative mode beyond the conservative caps.
 
 ---
 

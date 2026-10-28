@@ -83,8 +83,8 @@ function importBackupText(txt,skipConfirm){let o;try{o=JSON.parse(txt)}catch(e){
 function pickBackup(){const i=document.getElementById('restoreFile');if(i)i.click()}
 function onBackupFile(inp){const f=inp.files&&inp.files[0];if(!f)return;if(f.size>5e6){toast('That file is too big to be a backup.');return}
  f.text().then(t=>{const r=importBackupText(t);inp.value='';if(r.ok){location.reload()}else if(r.error!=='cancelled')toast(r.error)})}
-{const _s=SC.settings;SC.settings=()=>_s().replace('<button class="btn red" onclick="resetAll()">',
- `<button class="btn sec" id="restoreBtn" onclick="pickBackup()">Restore from a backup</button><input type="file" id="restoreFile" accept="application/json,.json" hidden onchange="onBackupFile(this)"><button class="btn red" onclick="resetAll()">`)
+{const _s=SC.settings;SC.settings=()=>_s().replace('<button class="btn red" onclick="resetAll()"',
+ `<button class="btn sec" id="restoreBtn" onclick="pickBackup()">Restore from a backup</button><input type="file" id="restoreFile" accept="application/json,.json" hidden onchange="onBackupFile(this)"><button class="btn red" onclick="resetAll()"`)
  +`<div class="card"><h2>Install</h2><button class="btn sec" id="installBtn" onclick="go('install')">${isStandalone()?'Installed ✓ — how it works':'Add to Home Screen'}</button></div>`}
 
 /* ---------- 6. Service worker + update prompt ---------- */

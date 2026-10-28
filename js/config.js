@@ -7,12 +7,12 @@
 const FC_CONFIG={
  APPROVED:{
   maxStepUpsPerSession:1,          // one step up per session
-  badDayLowersLevel:false,         // one bad day never lowers a level
+  badDayLowersLevel:false,         // one bad day never lowers a level [declarative: enforced in engine.applySession, asserted by tests/inv.js]
   injuryGatePainFreeSessions:3,    // OQ-8: 3 pain-free sessions...
   injuryGateMinDays:7,             // ...over at least 7 days, per readiness step
   // v0.6: the 7-day calibration floor is retired. Calibration ends on data quality, never on time (CORE-PRODUCT-LOGICS §3).
-  startEveryoneAsBeginner:true,    // CORE-PRODUCT-LOGICS §2; experience answer only sets coaching tone
-  maxLevelChangePerStep:1,         // CORE-PRODUCT-LOGICS §4: intensity changes at most +/-1 level
+  startEveryoneAsBeginner:true,    /* declarative: enforced by beginnerLevel, asserted by tests/v06.js */    // CORE-PRODUCT-LOGICS §2; experience answer only sets coaching tone
+  maxLevelChangePerStep:1, /* declarative: lvl only moves by ++/-- in engine; asserted by tests/inv.js */        // CORE-PRODUCT-LOGICS §4: intensity changes at most +/-1 level
   rescreenDays:90,                 // OQ-14
   maxNudgesPerDay:1,               // S11: at most 1 nudge a day
   // ---- Decision Round 1, approved by the owner 2026-10-27 (docs/DECISION-ROUND-1.md) ----
@@ -38,7 +38,7 @@ const FC_CONFIG={
   learnedNudgeDefault:'18:00',                       // R14
   proposeShorterIfActualBelow:0.7,                   // R15
   // R16 weekly goal + streak definition (goal = the days/week the user chose)
-  streakUnit:'weeks with at least one workout',
+  streakUnit:'weeks with at least one workout',     // definition only (copy); weekStats() implements it
   // R17 one-tap "I feel good" check-in = sleep good, energy good, no soreness, no pain 
   quickCheckin:{sleep:'good',energy:'high',soreness:'none',pain:'no'},
   // R18 defaults used because onboarding now skips the tone/reminder/Health screens 
@@ -66,7 +66,7 @@ const FC_CONFIG={
   suggestThreeDaysFrom:5,
   skipNoteAfter:3,skipNoteWindowDays:14,             // R25: gentle note after 3 skips of the same movement in 14 days
   restExtendSec:15,                                  // R12: "+15 s" more-rest option
-  healthReadTypes:['sleep','workouts']               // OQ-18: read only what the engine uses
+  healthReadTypes:['sleep','workouts']               // drives the Health screen columns; engine uses sleep only               // OQ-18: read only what the engine uses
  },
  RESEARCH_NEEDED:{ // PLACEHOLDER — still open after Decision Round 1 (DEFERRED or superseded)
   calibrationObsPerPattern:3,                        // R8 (superseded in v0.6 by R19; kept for reference)

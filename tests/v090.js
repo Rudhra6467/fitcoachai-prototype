@@ -7,7 +7,7 @@ const fakeSR=`class FakeSR{start(){window.__recActive=this}abort(){}stop(){}}win
  const ck=s=>pg.click(s),chip=t=>pg.locator('#app .chip',{hasText:t}).first().click(),has=async s=>(await pg.locator(s).count())>0;
  // 1. config: approved values moved, only deferred/superseded left in RESEARCH_NEEDED
  const cf=await pg.evaluate(()=>({A:FC_CONFIG.APPROVED,R:Object.keys(FC_CONFIG.RESEARCH_NEEDED).sort(),v:APPVER}));const A=cf.A;
- check(cf.v==='0.9.0','APPVER 0.9.0');
+ check(/^0\.9\./.test(cf.v),'APPVER 0.9.x');
  check(JSON.stringify(cf.R)===JSON.stringify(['calibrationObsPerPattern','experienceTone','scoreCeilingByTier','scoreHardEffortFactor','scoreMinCeiling','scoreUnknownPenalty']),'RESEARCH_NEEDED keeps only R8/R9 (superseded) and R24 (deferred): '+cf.R.join(','));
  const exp={'repRange':{standard:[8,12],gentle:[6,10]},'holdRangeSec':{standard:[15,30],gentle:[10,20]},'cardioRangeMin':{standard:[3,5],gentle:[2,3]},startSets:2,maxSets:3,ladderLevels:4,cleanSessionsToStepUp:2,repIncrement:1,
   badSessionsToReviseVolume:2,badSessionsToReviseLevel:3,minDaysBetweenLevelDowns:7,minSessionsBetweenChanges:2,plateauSessions:4,gentleMaxLevel:1,gentleMinDaysBetweenSteps:7,restSec:{standard:30,gentle:45},hkShortSleepHours:6,
